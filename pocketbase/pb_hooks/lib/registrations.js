@@ -60,7 +60,7 @@ function register(txApp, eventId, userId) {
   return reg
 }
 
-/** Cancela a inscrição de `userId` e, se liberou vaga, promove a fila. */
+/** Cancela a inscrição de `userId` e, se liberou vaga, promove a fila. Devolve quem foi promovido. */
 function cancel(txApp, eventId, userId) {
   const event = loadEvent(txApp, eventId)
   if (nowUnix() >= event.getDateTime("eventDate").unix()) throw new BadRequestError("O evento já começou.")
@@ -75,15 +75,15 @@ function cancel(txApp, eventId, userId) {
     require(`${__hooks}/lib/invites.js`).releaseTeam(txApp, eventId, userId)
   }
   bump(event, status === "confirmed" ? "confirmedCount" : "waitlistCount", -1)
-  promote(txApp, event)
+  const promoted = promote(txApp, event)
   txApp.save(event)
-  return reg
+  return { registration: reg, promoted }
 }
 
-/** Confirma os primeiros da fila enquanto houver vaga. Não salva o evento: quem chama salva. */
+/** Confirma os primeiros da fila enquanto houver vaga e devolve os ids promovidos. Não salva o evento: quem chama salva. */
 function promote(txApp, event) {
   const free = event.getInt("maxParticipants") - event.getInt("confirmedCount")
-  if (free <= 0) return
+  if (free <= 0) return []
   const next = txApp.findRecordsByFilter("registrations", "event = {:e} && status = 'waitlist'", "position", free, 0, { e: event.id })
   for (const reg of next) {
     reg.set("status", "confirmed")
@@ -91,6 +91,7 @@ function promote(txApp, event) {
     bump(event, "confirmedCount", 1)
     bump(event, "waitlistCount", -1)
   }
+  return next.map((reg) => reg.getString("user"))
 }
 
 function ensurePassport(txApp, reg) {

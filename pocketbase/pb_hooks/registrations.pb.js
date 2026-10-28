@@ -9,7 +9,9 @@ routerAdd("POST", "/api/g/events/{id}/register", (e) => {
 
 routerAdd("POST", "/api/g/events/{id}/cancel", (e) => {
   const { cancel } = require(`${__hooks}/lib/registrations.js`)
-  let reg
-  $app.runInTransaction((txApp) => { reg = cancel(txApp, e.request.pathValue("id"), e.auth.id) })
-  return e.json(200, reg)
+  const eventId = e.request.pathValue("id")
+  let result
+  $app.runInTransaction((txApp) => { result = cancel(txApp, eventId, e.auth.id) })
+  require(`${__hooks}/lib/push.js`).promoted($app, eventId, result.promoted) // depois do commit
+  return e.json(200, result.registration)
 }, $apis.requireAuth("users"))

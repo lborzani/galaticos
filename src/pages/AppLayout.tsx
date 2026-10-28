@@ -81,7 +81,7 @@ function Count({ n, floating }: { n?: number; floating?: boolean }) {
 function Logo() {
   return (
     <NavLink to="/" className="flex items-center gap-2 font-black">
-      <img src="/logo.jpg" alt="" className="size-8 rounded-lg" /> Galáticos
+      <img src="/logo-128.webp" alt="" className="size-8 rounded-lg" /> Galáticos
     </NavLink>
   )
 }

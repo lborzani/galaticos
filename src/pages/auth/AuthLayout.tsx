@@ -10,7 +10,7 @@ export function AuthLayout() {
     <main className="min-h-dvh grid place-items-center px-4 py-10">
       <div className="w-full max-w-sm grid gap-6">
         <div className="flex flex-col items-center gap-3">
-          <img src="/logo.jpg" alt="" className="size-20 rounded-2xl" />
+          <img src="/logo-128.webp" alt="" className="size-20 rounded-2xl" />
           <h1 className="text-3xl font-black tracking-tight">Galáticos</h1>
         </div>
         <Outlet />

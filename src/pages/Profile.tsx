@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { avatarUrl, errorMessage, initials, pb, POSITION_LABELS, useUser, type User } from '@/lib/pb'
+import { disablePush, enablePush, pushState, signOut, type PushState } from '@/lib/push'
 
 const NO_POSITION = 'none'
 
@@ -111,9 +112,45 @@ function ProfileForm() {
             <Label htmlFor="theme">Tema escuro</Label>
             <Switch id="theme" checked={resolvedTheme === 'dark'} onCheckedChange={(on) => setTheme(on ? 'dark' : 'light')} />
           </div>
-          <Button variant="outline" onClick={() => pb.authStore.clear()}>Sair</Button>
+          <Notifications />
+          <Button variant="outline" onClick={signOut}>Sair</Button>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+const PUSH_HINT: Partial<Record<PushState, string>> = {
+  'ios-install': 'No iPhone, instale o app (Compartilhar → Adicionar à Tela de Início) e ative por lá.',
+  unsupported: 'Este navegador não suporta notificações.',
+  denied: 'Notificações bloqueadas. Libere nas configurações do navegador para este site.',
+}
+
+function Notifications() {
+  const [state, setState] = useState<PushState>()
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { pushState().then(setState) }, [])
+
+  async function toggle(on: boolean) {
+    setBusy(true)
+    try {
+      if (on) setState(await enablePush())
+      else { await disablePush(); setState(await pushState()) }
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não foi possível ativar as notificações.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const hint = state && PUSH_HINT[state]
+  return (
+    <div className="grid gap-1">
+      <div className="flex items-center justify-between gap-4">
+        <Label htmlFor="push">Notificações</Label>
+        <Switch id="push" checked={state === 'on'} disabled={busy || !state || !!hint} onCheckedChange={toggle} />
+      </div>
+      <span className="text-xs text-muted-foreground">{hint ?? 'Lembretes 1 h e 5 min antes, vaga liberada na fila e cancelamentos.'}</span>
     </div>
   )
 }

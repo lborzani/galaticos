@@ -28,14 +28,26 @@ onRecordValidate((e) => {
   e.next()
 }, "events")
 
-// Mais vagas num evento com fila: promove os próximos na mesma transação do update.
+// Ao editar: mais vagas promovem a fila (mesma transação do update); cancelamento avisa os inscritos.
 onRecordUpdateRequest((e) => {
-  const grew = e.record.getInt("maxParticipants") > e.record.original().getInt("maxParticipants")
-  if (!grew) return e.next()
-  const { promote } = require(`${__hooks}/lib/registrations.js`)
-  $app.runInTransaction((txApp) => {
-    e.app = txApp
-    promote(txApp, e.record)
+  const before = e.record.original()
+  const grew = e.record.getInt("maxParticipants") > before.getInt("maxParticipants")
+  const cancelling = !!e.record.getString("cancelledAt") && !before.getString("cancelledAt")
+  let promotedIds = []
+
+  if (grew) {
+    const { promote } = require(`${__hooks}/lib/registrations.js`)
+    $app.runInTransaction((txApp) => {
+      e.app = txApp
+      promotedIds = promote(txApp, e.record)
+      e.next()
+    })
+  } else {
     e.next()
-  })
+  }
+
+  // push depois de gravar: falha de envio nunca desfaz a edição
+  const push = require(`${__hooks}/lib/push.js`)
+  if (cancelling) push.eventCancelled($app, e.record)
+  push.promoted($app, e.record.id, promotedIds)
 }, "events")
