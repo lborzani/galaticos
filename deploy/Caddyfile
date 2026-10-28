@@ -1,0 +1,13 @@
+# HTTPS automático (Let's Encrypt) para o domínio em DOMAIN. Com DOMAIN=localhost, usa certificado local.
+{$DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	# o service worker precisa sempre da versão nova para detectar atualizações
+	@sw path /sw.js
+	header @sw Cache-Control "no-cache"
+	reverse_proxy app:8090
+}

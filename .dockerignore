@@ -1,0 +1,11 @@
+node_modules
+.git
+.env
+.claude
+.remember
+deploy/.env
+pocketbase/pocketbase
+pocketbase/pb_data
+pocketbase/pb_public
+test-results
+playwright-report

@@ -28,3 +28,6 @@ pocketbase/pb_public/
 # Playwright
 test-results/
 playwright-report/
+
+# Deploy
+deploy/.env

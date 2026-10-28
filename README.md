@@ -47,3 +47,34 @@ Primeira vez: `npx playwright install chromium`. Falhas deixam trace em `test-re
 - `push/` — sidecar de Web Push (Node, `web-push`)
 - `tests/` — testes de integração da API (Vitest)
 - `e2e/` — testes ponta a ponta no navegador (Playwright)
+
+## Deploy (self-hosted)
+
+Três containers (`deploy/compose.yml`): **Caddy** (HTTPS automático via Let's Encrypt) → **app** (PocketBase servindo
+API, painel `/_/` e o PWA) → **push** (sidecar, só na rede interna). Requisitos: servidor com Docker, portas 80 e 443
+abertas e um domínio com registro A/AAAA apontando para ele.
+
+```bash
+git clone <repo> galaticos && cd galaticos/deploy
+cp .env.example .env            # preencha DOMAIN, SMTP, VAPID (npx web-push generate-vapid-keys) e PUSH_SECRET
+docker compose up -d --build
+docker compose exec app ./pocketbase superuser upsert voce@exemplo.com 'senha-forte' --dir /pb_data
+```
+
+Depois: entre em `https://SEU_DOMINIO/_/`, crie sua conta pelo app e, no painel, mude seu `role` para `admin`.
+SMTP, URL e backup são lidos do `.env` **só na primeira subida**; depois ajuste em `/_/` → Settings.
+
+**Atualizar:** `git pull && docker compose up -d --build`. As migrations rodam sozinhas ao iniciar; o app mostra
+"Nova versão disponível" para quem estiver com ele aberto.
+
+**Backup:** automático todo dia às 04:00, mantendo 14 cópias em `pb_data/backups` (volume `pb_data`). Copie para fora
+do servidor regularmente, ou configure S3 em `/_/` → Settings → Backups.
+
+```bash
+docker compose cp app:/pb_data/backups ./backups          # baixar os backups do servidor
+```
+
+**Restaurar:** em `/_/` → Settings → Backups → *Restore* (o PocketBase reinicia sozinho). Para um backup vindo de fora:
+`docker compose cp arquivo.zip app:/pb_data/backups/` e restaure pelo painel.
+
+**Logs:** `docker compose logs -f app` (falhas de push aparecem aqui e em `/_/` → Logs).

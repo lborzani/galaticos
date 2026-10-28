@@ -1,0 +1,37 @@
+# Produção: Caddy (HTTPS) → PocketBase (app + API) ; PocketBase → sidecar de push (rede interna).
+# Uso: cd deploy && cp .env.example .env && (edite) && docker compose up -d --build
+name: galaticos
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN:?defina DOMAIN no deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+  app:
+    build: { context: .., target: app }
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      APP_URL: https://${DOMAIN}
+      PUSH_URL: http://push:8098
+      TZ: America/Sao_Paulo
+    volumes:
+      - pb_data:/pb_data
+
+  push:
+    build: { context: .., target: push }
+    restart: unless-stopped
+    env_file: .env
+
+volumes:
+  pb_data:
+  caddy_data:
+  caddy_config:
