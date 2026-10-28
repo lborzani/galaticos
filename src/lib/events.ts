@@ -27,6 +27,16 @@ export interface Registration extends RecordModel {
   expand?: { user?: import('./pb').User }
 }
 
+export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'cancelled'
+
+export interface Invite extends RecordModel {
+  event: string
+  captain: string
+  player: string
+  status: InviteStatus
+  expand?: { event?: GEvent; captain?: import('./pb').User; player?: import('./pb').User }
+}
+
 export const TYPE_LABELS: Record<EventType, string> = {
   wednesday: 'Bate-bola Quarta',
   sunday: 'Bate-bola Domingo',

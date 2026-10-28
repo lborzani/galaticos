@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDateTime, type EventStatus, type GEvent, type Registration } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
+import { PrimeTeams } from './prime'
 import { avatarUrl, initials, pb, POSITION_LABELS, serverMessage, useUser } from '@/lib/pb'
 
 /** Ação do usuário (entrar/sair) + listas de confirmados e espera, ao vivo. */
@@ -31,8 +32,9 @@ export function RegistrationPanel({ event, status }: { event: GEvent; status: Ev
   return (
     <div className="grid gap-6">
       <MyRegistration event={event} status={status} mine={mine} waitRank={mine ? waitlist.indexOf(mine) + 1 : 0} />
-      <PlayerList title={`Confirmados (${confirmed.length}/${event.maxParticipants})`} regs={confirmed} empty="Ninguém confirmado ainda." />
+      <PlayerList title={`${event.type === 'prime' ? 'Capitães' : 'Confirmados'} (${confirmed.length}/${event.maxParticipants})`} regs={confirmed} empty="Ninguém confirmado ainda." />
       {waitlist.length > 0 && <PlayerList title={`Lista de espera (${waitlist.length})`} regs={waitlist} numbered />}
+      {event.type === 'prime' && <PrimeTeams event={event} captains={confirmed} canInvite={status === 'open' || status === 'full' || status === 'upcoming'} />}
     </div>
   )
 }

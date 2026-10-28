@@ -1,19 +1,27 @@
-import { House, ScanLine, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
+import { House, Mail, ScanLine, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
 import { Navigate, NavLink, Outlet } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { avatarUrl, initials, isAdmin, useUser } from '@/lib/pb'
+import type { Invite } from '@/lib/events'
+import { useLiveList } from '@/lib/live'
+import { avatarUrl, initials, isAdmin, pb, useUser, type User } from '@/lib/pb'
 
-type Item = { to: string; label: string; icon: LucideIcon; end?: boolean }
+type Item = { to: string; label: string; icon: LucideIcon; end?: boolean; count?: number }
 
 /** Abas inferiores no celular, barra lateral a partir de md. */
 export function AppLayout() {
   const user = useUser()
   if (!user) return <Navigate to="/entrar" replace />
+  return <Shell user={user} />
+}
+
+function Shell({ user }: { user: User }) {
+  const { data: pending } = useLiveList<Invite>('invites', { filter: pb.filter('player = {:u} && status = "pending"', { u: user.id }) })
 
   const items: Item[] = [
     { to: '/', label: 'Início', icon: House, end: true },
     { to: '/passaporte', label: 'Passaporte', icon: Ticket },
+    { to: '/convites', label: 'Convites', icon: Mail, count: pending?.length },
     ...(isAdmin(user) ? [{ to: '/admin', label: 'Validar', icon: ScanLine, end: true }] : []),
     { to: '/perfil', label: 'Perfil', icon: UserIcon },
   ]
@@ -27,7 +35,7 @@ export function AppLayout() {
             <NavLink key={it.to} to={it.to} end={it.end}
               className={({ isActive }) => cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
                 isActive && 'bg-accent text-accent-foreground')}>
-              <it.icon className="size-4" /> {it.label}
+              <it.icon className="size-4" /> {it.label} <Count n={it.count} />
             </NavLink>
           ))}
         </nav>
@@ -51,11 +59,22 @@ export function AppLayout() {
         {items.map((it) => (
           <NavLink key={it.to} to={it.to} end={it.end}
             className={({ isActive }) => cn('flex flex-col items-center gap-1 py-2 text-xs text-muted-foreground', isActive && 'text-primary')}>
-            <it.icon className="size-5" /> {it.label}
+            <span className="relative"><it.icon className="size-5" /><Count n={it.count} floating /></span> {it.label}
           </NavLink>
         ))}
       </nav>
     </div>
+  )
+}
+
+function Count({ n, floating }: { n?: number; floating?: boolean }) {
+  if (!n) return null
+  return (
+    <span aria-label={`${n} pendente${n > 1 ? 's' : ''}`}
+      className={cn('grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold leading-4 text-primary-foreground',
+        floating ? 'absolute -right-2 -top-1' : 'ml-auto')}>
+      {n}
+    </span>
   )
 }
 

@@ -9,6 +9,7 @@ import EventDetail from '@/pages/EventDetail'
 import { AuthLayout } from '@/pages/auth/AuthLayout'
 import { ConfirmEmail, ForgotPassword, Login, Register, ResetPassword } from '@/pages/auth/pages'
 import Home from '@/pages/Home'
+import Inbox from '@/pages/Inbox'
 import Passport from '@/pages/Passport'
 import Profile from '@/pages/Profile'
 
@@ -39,6 +40,7 @@ const router = createBrowserRouter([
       { path: '/', element: <Home /> },
       { path: '/perfil', element: <Profile /> },
       { path: '/passaporte', element: <Passport /> },
+      { path: '/convites', element: <Inbox /> },
       { path: '/evento/:id', element: <EventDetail /> },
       {
         element: <RequireAdmin />,

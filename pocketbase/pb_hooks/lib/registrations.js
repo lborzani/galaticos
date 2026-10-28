@@ -36,6 +36,10 @@ function register(txApp, eventId, userId) {
 
   let reg = findOptional(txApp, "registrations", "event = {:e} && user = {:u}", { e: eventId, u: userId })
   if (reg && ACTIVE.includes(reg.getString("status"))) throw new BadRequestError("Você já está na lista.")
+  if (event.getString("type") === "prime" &&
+      findOptional(txApp, "invites", "event = {:e} && player = {:u} && (status = 'pending' || status = 'accepted')", { e: eventId, u: userId })) {
+    throw new BadRequestError("Você já foi convidado para um time deste evento.")
+  }
 
   const last = txApp.findRecordsByFilter("registrations", "event = {:e}", "-position", 1, 0, { e: eventId })
   const position = last.length ? last[0].getInt("position") + 1 : 1
@@ -67,6 +71,9 @@ function cancel(txApp, eventId, userId) {
 
   reg.set("status", "cancelled")
   txApp.save(reg)
+  if (status === "confirmed" && event.getString("type") === "prime") {
+    require(`${__hooks}/lib/invites.js`).releaseTeam(txApp, eventId, userId)
+  }
   bump(event, status === "confirmed" ? "confirmedCount" : "waitlistCount", -1)
   promote(txApp, event)
   txApp.save(event)
