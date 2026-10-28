@@ -55,3 +55,8 @@ if (pb.authStore.isValid) {
     if ([401, 403, 404].includes(err.status)) pb.authStore.clear() // offline mantém a sessão
   })
 }
+
+/** Mensagem das rotas /api/g/* (escritas em português pelo próprio backend). */
+export function serverMessage(err: unknown, fallback?: string) {
+  return err instanceof ClientResponseError && err.status === 400 && err.response?.message ? err.response.message : errorMessage(err, fallback)
+}

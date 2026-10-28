@@ -10,10 +10,9 @@ export async function admin() {
   return pb
 }
 
-let seq = 0
 /** Cria um usuário verificado e devolve um client autenticado como ele. */
 export async function member(name = 'Jogador', role: 'member' | 'admin' = 'member') {
-  const email = `u${Date.now()}${seq++}@test.local`
+  const email = `u${crypto.randomUUID()}@test.local`
   const password = 'senha-forte-123'
   const root = await admin()
   await root.collection('users').create({ email, password, passwordConfirm: password, name, role, verified: true })

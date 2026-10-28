@@ -47,3 +47,13 @@ export function useLiveRecord<T extends RecordModel>(collection: string, id: str
 
   return state
 }
+
+/** Hora atual que se atualiza a cada `ms`, para status que mudam com o relógio (lista abrindo etc). */
+export function useNow(ms: number) {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), ms)
+    return () => clearInterval(t)
+  }, [ms])
+  return now
+}

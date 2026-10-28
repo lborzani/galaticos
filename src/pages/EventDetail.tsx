@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { StatusBadge } from '@/components/events'
+import { RegistrationPanel } from '@/components/registration'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -12,19 +13,20 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { deriveStatus, formatDateTime, isPast, TYPE_LABELS, type GEvent } from '@/lib/events'
-import { useLiveRecord } from '@/lib/live'
+import { useLiveRecord, useNow } from '@/lib/live'
 import { errorMessage, isAdmin, pb, useUser } from '@/lib/pb'
 
 export default function EventDetail() {
   const { id } = useParams()
   const user = useUser()!
   const { data: event, error } = useLiveRecord<GEvent>('events', id!)
+  const now = useNow(1000) // botão aparece no segundo em que a lista abre
 
   if (error) return <p className="text-destructive" role="alert">Não foi possível carregar o evento.</p>
   if (event === undefined) return <p className="text-muted-foreground">Carregando…</p>
   if (event === null) return <p>Evento não encontrado. <Link to="/" className="text-primary hover:underline">Voltar</Link></p>
 
-  const status = deriveStatus(event)
+  const status = deriveStatus(event, now)
 
   return (
     <div className="grid gap-6">
@@ -50,6 +52,8 @@ export default function EventDetail() {
           <Info icon={Users}>{event.maxParticipants} vagas</Info>
         </CardContent>
       </Card>
+
+      {!event.cancelledAt && <RegistrationPanel event={event} status={status} />}
 
       {isAdmin(user) && !isPast(status) && (
         <div className="flex flex-wrap gap-2">

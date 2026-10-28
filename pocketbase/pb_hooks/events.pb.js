@@ -15,10 +15,27 @@ onRecordValidate((e) => {
       registrationOpensAt: new ValidationError("opens_after_event", "Deve ser antes do evento."),
     })
   }
+  if (r.getInt("maxParticipants") < r.getInt("confirmedCount")) {
+    throw new BadRequestError(`Já há ${r.getInt("confirmedCount")} confirmados; não dá para ter menos vagas.`, {
+      maxParticipants: new ValidationError("below_confirmed", "Menor que o número de confirmados."),
+    })
+  }
   if (r.getString("cancelledAt") && !r.getString("cancellationReason").trim()) {
     throw new BadRequestError("Informe o motivo do cancelamento.", {
       cancellationReason: new ValidationError("required", "Obrigatório ao cancelar."),
     })
   }
   e.next()
+}, "events")
+
+// Mais vagas num evento com fila: promove os próximos na mesma transação do update.
+onRecordUpdateRequest((e) => {
+  const grew = e.record.getInt("maxParticipants") > e.record.original().getInt("maxParticipants")
+  if (!grew) return e.next()
+  const { promote } = require(`${__hooks}/lib/registrations.js`)
+  $app.runInTransaction((txApp) => {
+    e.app = txApp
+    promote(txApp, e.record)
+    e.next()
+  })
 }, "events")

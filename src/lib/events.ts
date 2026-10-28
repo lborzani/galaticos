@@ -13,6 +13,18 @@ export interface GEvent extends RecordModel {
   createdBy: string
   cancelledAt: string
   cancellationReason: string
+  confirmedCount: number
+  waitlistCount: number
+}
+
+export type RegistrationStatus = 'confirmed' | 'waitlist' | 'cancelled' | 'attended'
+
+export interface Registration extends RecordModel {
+  event: string
+  user: string
+  status: RegistrationStatus
+  position: number
+  expand?: { user?: import('./pb').User }
 }
 
 export const TYPE_LABELS: Record<EventType, string> = {
@@ -40,14 +52,14 @@ const EVENT_DURATION_MS = 3 * 3600_000
 /** Datas do PocketBase vêm como "2026-10-30 13:00:00.000Z"; o Safari não aceita o espaço. */
 export const parseDate = (s: string) => new Date(s.replace(' ', 'T'))
 
-export function deriveStatus(ev: GEvent, confirmedCount = 0, now = new Date()): EventStatus {
+export function deriveStatus(ev: GEvent, now = new Date()): EventStatus {
   if (ev.cancelledAt) return 'cancelled'
   const start = parseDate(ev.eventDate).getTime()
   const t = now.getTime()
   if (t >= start + EVENT_DURATION_MS) return 'finished'
   if (t >= start) return 'in_progress'
   if (t < parseDate(ev.registrationOpensAt).getTime()) return 'upcoming'
-  return confirmedCount >= ev.maxParticipants ? 'full' : 'open'
+  return ev.confirmedCount >= ev.maxParticipants ? 'full' : 'open'
 }
 
 export const isPast = (s: EventStatus) => s === 'finished' || s === 'cancelled'
