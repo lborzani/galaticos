@@ -50,21 +50,25 @@ Primeira vez: `npx playwright install chromium`. Falhas deixam trace em `test-re
 
 ## Deploy (self-hosted)
 
-Três containers (`deploy/compose.yml`): **Caddy** (HTTPS automático via Let's Encrypt) → **app** (PocketBase servindo
-API, painel `/_/` e o PWA) → **push** (sidecar, só na rede interna). Requisitos: servidor com Docker, portas 80 e 443
-abertas e um domínio com registro A/AAAA apontando para ele.
+Containers (`deploy/compose.yml`): **app** (PocketBase servindo API, painel `/_/` e o PWA) → **push** (sidecar, só na
+rede interna). O HTTPS vem de um de dois jeitos:
+
+- **Tailscale Funnel** (usado na Pi de casa): sem abrir porta no roteador, URL `https://<maquina>.<tailnet>.ts.net`.
+  Na máquina: instalar Tailscale, `sudo tailscale up --operator=$USER`, e habilitar Funnel no admin do Tailscale.
+- **Caddy** (`--profile caddy`): Let's Encrypt num domínio próprio; exige portas 80/443 abertas e DNS apontando.
 
 ```bash
 git clone <repo> galaticos && cd galaticos/deploy
 cp .env.example .env            # preencha DOMAIN, SMTP, VAPID (npx web-push generate-vapid-keys) e PUSH_SECRET
-docker compose up -d --build
+docker compose up -d --build                 # + "--profile caddy" se for usar o Caddy
+tailscale funnel --bg 8090                   # só no caminho Tailscale
 docker compose exec app ./pocketbase superuser upsert voce@exemplo.com 'senha-forte' --dir /pb_data
 ```
 
 Depois: entre em `https://SEU_DOMINIO/_/`, crie sua conta pelo app e, no painel, mude seu `role` para `admin`.
 SMTP, URL e backup são lidos do `.env` **só na primeira subida**; depois ajuste em `/_/` → Settings.
 
-**Atualizar:** `git pull && docker compose up -d --build`. As migrations rodam sozinhas ao iniciar; o app mostra
+**Atualizar:** `git pull && docker compose up -d --build` (com `--profile caddy` se usar o Caddy). As migrations rodam sozinhas ao iniciar; o app mostra
 "Nova versão disponível" para quem estiver com ele aberto.
 
 **Backup:** automático todo dia às 04:00, mantendo 14 cópias em `pb_data/backups` (volume `pb_data`). Copie para fora
