@@ -49,6 +49,7 @@ function register(txApp, eventId, userId) {
   reg.set("status", status)
   reg.set("position", position) // reinscrição volta para o fim
   txApp.save(reg)
+  ensurePassport(txApp, reg)
 
   bump(event, status === "confirmed" ? "confirmedCount" : "waitlistCount", 1)
   txApp.save(event)
@@ -85,4 +86,37 @@ function promote(txApp, event) {
   }
 }
 
-module.exports = { register, cancel, promote }
+function ensurePassport(txApp, reg) {
+  if (findOptional(txApp, "passports", "registration = {:r}", { r: reg.id })) return
+  const p = new Record(txApp.findCollectionByNameOrId("passports"))
+  p.set("registration", reg.id)
+  p.set("user", reg.getString("user"))
+  p.set("token", $security.randomString(40))
+  txApp.save(p)
+}
+
+/** Resolve o QR lido pelo admin. Recusa token desconhecido, inscrição fora da lista e evento cancelado. */
+function checkPassport(txApp, token) {
+  const passport = findOptional(txApp, "passports", "token = {:t}", { t: String(token || "") })
+  if (!passport) throw new NotFoundError("QR Code inválido.")
+  const reg = txApp.findRecordById("registrations", passport.getString("registration"))
+  const event = txApp.findRecordById("events", reg.getString("event"))
+  const user = txApp.findRecordById("users", reg.getString("user"))
+  const status = reg.getString("status")
+  if (event.getString("cancelledAt")) throw new BadRequestError("Esse evento foi cancelado.")
+  if (status === "cancelled") throw new BadRequestError(`${user.getString("name")} cancelou a inscrição.`)
+  if (status === "waitlist") throw new BadRequestError(`${user.getString("name")} está na lista de espera, não confirmado.`)
+  return { registration: reg, event, user, alreadyAttended: status === "attended" }
+}
+
+function attend(txApp, token, adminId) {
+  const r = checkPassport(txApp, token)
+  if (r.alreadyAttended) return r
+  r.registration.set("status", "attended")
+  r.registration.set("attendedAt", new DateTime())
+  r.registration.set("attendedBy", adminId)
+  txApp.save(r.registration)
+  return r
+}
+
+module.exports = { register, cancel, promote, checkPassport, attend }

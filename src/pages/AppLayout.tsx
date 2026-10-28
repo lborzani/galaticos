@@ -1,4 +1,4 @@
-import { House, User as UserIcon, type LucideIcon } from 'lucide-react'
+import { House, ScanLine, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
 import { Navigate, NavLink, Outlet } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
@@ -13,6 +13,8 @@ export function AppLayout() {
 
   const items: Item[] = [
     { to: '/', label: 'Início', icon: House, end: true },
+    { to: '/passaporte', label: 'Passaporte', icon: Ticket },
+    ...(isAdmin(user) ? [{ to: '/admin', label: 'Validar', icon: ScanLine, end: true }] : []),
     { to: '/perfil', label: 'Perfil', icon: UserIcon },
   ]
 

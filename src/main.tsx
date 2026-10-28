@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Outlet, RouterProvider } from 'react-router'
 import { ThemeProvider } from 'next-themes'
@@ -9,7 +9,11 @@ import EventDetail from '@/pages/EventDetail'
 import { AuthLayout } from '@/pages/auth/AuthLayout'
 import { ConfirmEmail, ForgotPassword, Login, Register, ResetPassword } from '@/pages/auth/pages'
 import Home from '@/pages/Home'
+import Passport from '@/pages/Passport'
 import Profile from '@/pages/Profile'
+
+// câmera + wasm do leitor só carregam para quem abre o scanner
+const Scanner = lazy(() => import('@/pages/admin/Scanner'))
 import './index.css'
 
 const router = createBrowserRouter([
@@ -34,10 +38,12 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/perfil', element: <Profile /> },
+      { path: '/passaporte', element: <Passport /> },
       { path: '/evento/:id', element: <EventDetail /> },
       {
         element: <RequireAdmin />,
         children: [
+          { path: '/admin', element: <Suspense fallback={<p className="text-muted-foreground">Abrindo câmera…</p>}><Scanner /></Suspense> },
           { path: '/admin/eventos/novo', element: <EventForm /> },
           { path: '/admin/eventos/:id/editar', element: <EventForm /> },
         ],

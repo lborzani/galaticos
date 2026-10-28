@@ -119,6 +119,7 @@ function PlayerList({ title, regs, empty, numbered }: { title: string; regs: Reg
                   {numbered && <span className="w-5 text-right text-sm tabular-nums text-muted-foreground">{i + 1}</span>}
                   <Avatar size="sm"><AvatarImage src={avatarUrl(u ?? null)} alt="" /><AvatarFallback>{initials(u?.name ?? '?')}</AvatarFallback></Avatar>
                   <span className="truncate text-sm">{u?.name ?? 'Jogador'}{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
+                  {r.status === 'attended' && <CircleCheck className="size-4 shrink-0 text-emerald-500" aria-label="presente" />}
                   {u?.position && <span className="ml-auto text-xs text-muted-foreground">{POSITION_LABELS[u.position]}</span>}
                 </li>
               )
