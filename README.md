@@ -24,11 +24,15 @@ E-mails de desenvolvimento chegam em http://localhost:8025.
 npm test          # integração contra um PocketBase temporário
 npm run typecheck
 npm run build     # gera o front em pocketbase/pb_public (servido pelo próprio PocketBase)
+npm run e2e       # Playwright: build + PocketBase descartável na :8097, Chromium desktop e Pixel 7
 ```
+
+Primeira vez: `npx playwright install chromium`. Falhas deixam trace em `test-results/` (`npx playwright show-trace <arquivo>`).
 
 ## Estrutura
 
 - `src/` — front (Vite, React Router, Tailwind + shadcn/ui)
 - `pocketbase/pb_migrations/` — schema e regras de acesso versionados
 - `pocketbase/pb_hooks/` — regras de negócio no servidor
-- `tests/` — testes de integração da API
+- `tests/` — testes de integração da API (Vitest)
+- `e2e/` — testes ponta a ponta no navegador (Playwright)

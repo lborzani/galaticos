@@ -24,3 +24,7 @@ yarn-error.*
 pocketbase/pocketbase
 pocketbase/pb_data/
 pocketbase/pb_public/
+
+# Playwright
+test-results/
+playwright-report/

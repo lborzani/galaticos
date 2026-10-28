@@ -16,6 +16,11 @@ const NO_POSITION = 'none'
 const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50, 'Máximo de 50 caracteres') })
 
 export default function Profile() {
+  // remonta quando o registro muda (authRefresh, edição em outro aparelho): o formulário nunca salva dados velhos
+  return <ProfileForm key={useUser()!.updated} />
+}
+
+function ProfileForm() {
   const user = useUser()!
   const { resolvedTheme, setTheme } = useTheme()
   const [position, setPosition] = useState<string>(user.position || NO_POSITION)

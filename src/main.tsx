@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Outlet, RouterProvider } from 'react-router'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
-import { AppLayout } from '@/pages/AppLayout'
+import { AppLayout, RequireAdmin } from '@/pages/AppLayout'
+import EventForm from '@/pages/admin/EventForm'
+import EventDetail from '@/pages/EventDetail'
 import { AuthLayout } from '@/pages/auth/AuthLayout'
 import { ConfirmEmail, ForgotPassword, Login, Register, ResetPassword } from '@/pages/auth/pages'
 import Home from '@/pages/Home'
@@ -32,6 +34,14 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/perfil', element: <Profile /> },
+      { path: '/evento/:id', element: <EventDetail /> },
+      {
+        element: <RequireAdmin />,
+        children: [
+          { path: '/admin/eventos/novo', element: <EventForm /> },
+          { path: '/admin/eventos/:id/editar', element: <EventForm /> },
+        ],
+      },
     ],
   },
 ])
