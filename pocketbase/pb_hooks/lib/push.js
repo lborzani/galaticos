@@ -13,8 +13,12 @@ function notify(app, userIds, payload) {
 
   const params = {}
   const filter = ids.map((id, i) => { params["u" + i] = id; return `user = {:u${i}}` }).join(" || ")
-  const subs = app.findRecordsByFilter("push_subscriptions", filter, "", 0, 0, params)
-  if (subs.length === 0) return
+  deliver(app, app.findRecordsByFilter("push_subscriptions", filter, "", 0, 0, params), payload)
+}
+
+function deliver(app, subs, payload) {
+  const url = $os.getenv("PUSH_URL")
+  if (!url || subs.length === 0) return
 
   try {
     const res = $http.send({
@@ -103,4 +107,15 @@ function runReminders(app) {
   return sent
 }
 
-module.exports = { notify, eventCancelled, promoted, runReminders }
+/** Post novo do mural: todos os aparelhos, menos os de quem publicou. */
+function newPost(app, post) {
+  const text = post.getString("body")
+  deliver(app, app.findRecordsByFilter("push_subscriptions", "user != {:a}", "", 0, 0, { a: post.getString("author") }), {
+    title: "Novo post",
+    body: text.length > 120 ? text.slice(0, 117) + "…" : text,
+    url: "/posts",
+    tag: "post-" + post.id,
+  })
+}
+
+module.exports = { notify, eventCancelled, promoted, runReminders, newPost }

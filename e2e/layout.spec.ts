@@ -5,7 +5,7 @@ test('navegação certa para o tamanho de tela e sem scroll horizontal', async (
   const ev = await makeEvent(admin.id)
   await loginAs(page, admin)
 
-  for (const url of ['/', '/perfil', `/evento/${ev.id}`, '/admin', '/admin/eventos/novo']) {
+  for (const url of ['/', '/perfil', `/evento/${ev.id}`, '/admin', '/admin/eventos/novo', '/posts']) {
     await page.goto(url)
     await expect(page.locator('main')).toBeVisible()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)

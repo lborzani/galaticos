@@ -13,10 +13,10 @@ async function device(pb: PocketBase, tag = '') {
   return endpoint
 }
 
-/** Pushes que chegaram ao sidecar para este endpoint. */
+/** Pushes de evento que chegaram ao sidecar para este endpoint (post novo vai para todos; tests/posts.test.ts cobre). */
 const received = async (endpoint: string) =>
-  ((await (await fetch(`${FAKE_PUSH_URL}/sent`)).json()) as { endpoint: string; payload: { title: string; body: string } }[])
-    .filter((s) => s.endpoint === endpoint).map((s) => s.payload)
+  ((await (await fetch(`${FAKE_PUSH_URL}/sent`)).json()) as { endpoint: string; payload: { title: string; body: string; tag: string } }[])
+    .filter((s) => s.endpoint === endpoint && !s.payload.tag.startsWith('post-')).map((s) => s.payload)
 
 async function eventWith(over: Record<string, unknown> = {}) {
   const adm = await member('Admin', 'admin')

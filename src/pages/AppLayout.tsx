@@ -1,4 +1,4 @@
-import { House, Mail, ShieldCheck, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
+import { House, Mail, Newspaper, ShieldCheck, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
 import { Navigate, NavLink, Outlet } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
@@ -20,6 +20,7 @@ function Shell({ user }: { user: User }) {
 
   const items: Item[] = [
     { to: '/', label: 'Início', icon: House, end: true },
+    { to: '/posts', label: 'Posts', icon: Newspaper },
     { to: '/passaporte', label: 'Passaporte', icon: Ticket },
     { to: '/convites', label: 'Convites', icon: Mail, count: pending?.length },
     ...(isAdmin(user) ? [{ to: '/admin', label: 'Admin', icon: ShieldCheck }] : []),

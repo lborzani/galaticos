@@ -55,7 +55,22 @@ export interface Template extends RecordModel {
   teams: boolean
 }
 
-export const kindLabel = (ev: GEvent) => ev.kind || 'Personalizado'
+export interface Post extends RecordModel {
+  author: string
+  body: string
+  images: string[]
+  event: string
+  likesCount: number
+  created: string
+  expand?: { author?: import('./pb').User; event?: GEvent }
+}
+
+export interface PostLike extends RecordModel {
+  post: string
+  user: string
+}
+
+export const kindLabel =(ev: GEvent) => ev.kind || 'Personalizado'
 
 export const STATUS_META: Record<EventStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   upcoming: { label: 'Em breve', variant: 'outline' },

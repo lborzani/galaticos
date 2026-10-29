@@ -35,7 +35,8 @@ const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { path: '/', element: <Home /> },
-      { path: '/perfil', lazy: page(() => import('@/pages/Profile')) },
+      { path: '/posts', lazy: page(() => import('@/pages/Posts')) },
+      { path: '/perfil',lazy: page(() => import('@/pages/Profile')) },
       { path: '/passaporte', lazy: page(() => import('@/pages/Passport')) },
       { path: '/convites', lazy: page(() => import('@/pages/Inbox')) },
       { path: '/evento/:id', lazy: page(() => import('@/pages/EventDetail')) },
