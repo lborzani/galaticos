@@ -44,7 +44,8 @@ const router = createBrowserRouter([
         element: <RequireAdmin />,
         children: [
           { path: '/admin', lazy: page(() => import('@/pages/admin/Panel')) },
-          { path: '/admin/validar', lazy: page(() => import('@/pages/admin/Scanner')) },
+          { path: '/admin/usuarios', lazy: page(() => import('@/pages/admin/Users')) },
+          { path: '/admin/validar',lazy: page(() => import('@/pages/admin/Scanner')) },
           { path: '/admin/eventos/novo', lazy: page(() => import('@/pages/admin/EventForm')) },
           { path: '/admin/eventos/:id/editar', lazy: page(() => import('@/pages/admin/EventForm')) },
         ],

@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import type { GEvent, Invite, Registration } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
-import { avatarUrl, initials, pb, POSITION_LABELS, serverMessage, useUser, type User } from '@/lib/pb'
+import { avatarUrl, initials, pb, POSITION_LABELS, rankAllowed, serverMessage, useUser, type User } from '@/lib/pb'
+import { RankBadge } from './rank'
 
 const TEAM_COLORS = ['border-l-violet-500', 'border-l-sky-500', 'border-l-amber-500']
 
@@ -70,6 +71,7 @@ function Member({ invite, canCancel }: { invite: Invite; canCancel: boolean }) {
     <li className="flex items-center gap-3">
       <PlayerAvatar user={p} />
       <span className="truncate text-sm">{p?.name ?? 'Jogador'}</span>
+      <RankBadge rank={p?.rank} />
       {invite.status === 'pending' && <Badge variant="outline">aguardando</Badge>}
       {canCancel && (
         <Button size="icon-sm" variant="ghost" className="ml-auto" onClick={cancel} aria-label={`Cancelar convite de ${p?.name}`}>
@@ -87,7 +89,7 @@ function InvitePlayers({ event, captains, invites }: { event: GEvent; captains: 
 
   const taken = new Set([...captains.map((c) => c.user), ...invites.map((i) => i.player)])
   const q = query.trim().toLowerCase()
-  const available = users?.filter((u) => !taken.has(u.id) && u.name.toLowerCase().includes(q))
+  const available = users?.filter((u) => !taken.has(u.id) && rankAllowed(event.allowedRanks, u.rank) && u.name.toLowerCase().includes(q))
 
   async function invite(player: User) {
     setSending(player.id)
@@ -114,7 +116,7 @@ function InvitePlayers({ event, captains, invites }: { event: GEvent; captains: 
               <li key={u.id} className="flex items-center gap-3">
                 <PlayerAvatar user={u} />
                 <div className="min-w-0">
-                  <p className="truncate text-sm">{u.name}</p>
+                  <p className="flex items-center gap-2 text-sm"><span className="truncate">{u.name}</span><RankBadge rank={u.rank} /></p>
                   {u.position && <p className="text-xs text-muted-foreground">{POSITION_LABELS[u.position]}</p>}
                 </div>
                 <Button size="sm" variant="outline" className="ml-auto" disabled={sending === u.id} onClick={() => invite(u)}

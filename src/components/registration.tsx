@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDateTime, type EventStatus, type GEvent, type Registration } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
 import { PrimeTeams } from './prime'
-import { avatarUrl, initials, pb, POSITION_LABELS, serverMessage, useUser } from '@/lib/pb'
+import { avatarUrl, initials, pb, POSITION_LABELS, rankAllowed, ranksLabel, serverMessage, useUser } from '@/lib/pb'
+import { RankBadge } from './rank'
 import { formatPhone, whatsappUrl } from '@/lib/phone'
 
 /** Ação do usuário (entrar/sair) + listas de confirmados e espera, ao vivo. */
@@ -41,6 +42,7 @@ export function RegistrationPanel({ event, status }: { event: GEvent; status: Ev
 }
 
 function MyRegistration({ event, status, mine, waitRank }: { event: GEvent; status: EventStatus; mine?: Registration; waitRank: number }) {
+  const rank = useUser()!.rank
   const [busy, setBusy] = useState(false)
 
   async function call(action: 'register' | 'cancel') {
@@ -60,6 +62,7 @@ function MyRegistration({ event, status, mine, waitRank }: { event: GEvent; stat
   if (mine?.status === 'attended') return <Notice icon={CircleCheck}>Presença registrada. Bom jogo!</Notice>
   if (status !== 'open' && status !== 'full') return null
 
+  if (!mine && !rankAllowed(event.allowedRanks, rank)) return <Notice>Este evento é só para {ranksLabel(event.allowedRanks)}.</Notice>
   if (!mine) {
     return (
       <Button size="lg" disabled={busy} onClick={() => call('register')}>
@@ -122,7 +125,10 @@ function PlayerList({ title, regs, empty, numbered }: { title: string; regs: Reg
                   {numbered && <span className="w-5 text-right text-sm tabular-nums text-muted-foreground">{i + 1}</span>}
                   <Avatar size="sm"><AvatarImage src={avatarUrl(u ?? null)} alt="" /><AvatarFallback>{initials(u?.name ?? '?')}</AvatarFallback></Avatar>
                   <div className="grid min-w-0">
-                    <span className="truncate text-sm">{u?.name ?? 'Jogador'}{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
+                    <span className="flex min-w-0 items-center gap-2 text-sm">
+                      <span className="truncate">{u?.name ?? 'Jogador'}{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
+                      <RankBadge rank={u?.rank} />
+                    </span>
                     {/* o servidor só manda `phone` para admins (e o próprio dono) */}
                     {u?.phone && r.user !== me && (
                       <a href={whatsappUrl(u.phone)} target="_blank" rel="noreferrer" className="w-fit text-xs text-primary hover:underline">

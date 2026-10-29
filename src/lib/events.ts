@@ -1,4 +1,5 @@
 import type { RecordModel } from 'pocketbase'
+import type { Rank } from './pb'
 
 export type EventStatus = 'upcoming' | 'open' | 'full' | 'in_progress' | 'finished' | 'cancelled'
 
@@ -16,6 +17,8 @@ export interface GEvent extends RecordModel {
   cancellationReason: string
   confirmedCount: number
   waitlistCount: number
+  /** Vazio = todos os ranks. */
+  allowedRanks: Rank[]
   expand?: { court?: Court }
 }
 
@@ -53,6 +56,7 @@ export interface Template extends RecordModel {
   name: string
   maxParticipants: number
   teams: boolean
+  allowedRanks: Rank[]
 }
 
 export interface Post extends RecordModel {

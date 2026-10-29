@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, MapPin, Pencil, Users } from 'lucide-react'
+import { CalendarDays, Clock, MapPin, Pencil, ShieldCheck, Users } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { courtName, deriveStatus, formatDateTime, isPast, kindLabel, mapsUrl, type GEvent } from '@/lib/events'
 import { useLiveRecord, useNow } from '@/lib/live'
-import { errorMessage, isAdmin, pb, useUser } from '@/lib/pb'
+import { errorMessage, isAdmin, pb, ranksLabel, useUser } from '@/lib/pb'
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -57,6 +57,7 @@ export default function EventDetail() {
           </Info>
           <Info icon={Clock}>Lista abre {formatDateTime(event.registrationOpensAt)}</Info>
           <Info icon={Users}>{event.maxParticipants} vagas</Info>
+          {event.allowedRanks?.length > 0 && <Info icon={ShieldCheck}>Só para {ranksLabel(event.allowedRanks)}</Info>}
         </CardContent>
       </Card>
 

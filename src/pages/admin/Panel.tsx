@@ -1,5 +1,5 @@
 import { ClientResponseError, type RecordModel } from 'pocketbase'
-import { Pencil, Plus, ScanLine, Trash2 } from 'lucide-react'
+import { Pencil, Plus, ScanLine, Trash2, Users as UsersIcon } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
@@ -13,17 +13,19 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { RanksField } from '@/components/rank'
 import type { Court, Template } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
-import { errorMessage, pb } from '@/lib/pb'
+import { errorMessage, pb, ranksLabel, type Rank } from '@/lib/pb'
 
 export default function Panel() {
   return (
     <div className="grid gap-6">
       <h1 className="text-2xl font-bold">Painel admin</h1>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-3">
         <Button asChild><Link to="/admin/eventos/novo"><Plus /> Novo evento</Link></Button>
         <Button variant="outline" asChild><Link to="/admin/validar"><ScanLine /> Validar passaportes</Link></Button>
+        <Button variant="outline" asChild><Link to="/admin/usuarios"><UsersIcon /> Usuários</Link></Button>
       </div>
       <ConfigList<Court> collection="courts" title="Quadras" newLabel="Nova quadra"
         deleteNote="Só dá para apagar quadra sem eventos."
@@ -33,7 +35,11 @@ export default function Panel() {
         form={(c, onDone) => <CourtForm court={c} onDone={onDone} />} />
       <ConfigList<Template> collection="templates" title="Templates de evento" newLabel="Novo template"
         deleteNote="Eventos já criados com ele não mudam."
-        summary={(t) => <p className="text-sm text-muted-foreground">{t.maxParticipants} vagas{t.teams && ' · com times'}</p>}
+        summary={(t) => (
+          <p className="text-sm text-muted-foreground">
+            {t.maxParticipants} vagas{t.teams && ' · com times'}{t.allowedRanks?.length > 0 && ` · só ${ranksLabel(t.allowedRanks)}`}
+          </p>
+        )}
         form={(t, onDone) => <TemplateForm template={t} onDone={onDone} />} />
     </div>
   )
@@ -170,6 +176,7 @@ const templateSchema = z.object({
   name: z.string().trim().min(3, 'Mínimo de 3 caracteres').max(80),
   maxParticipants: z.coerce.number().int('Número inteiro').min(1, 'Mínimo de 1 vaga').max(200),
   teams: z.boolean(),
+  allowedRanks: z.array(z.enum(['regular', 'mitico', 'lendario'])),
 })
 
 function TemplateForm({ template, onDone }: { template?: Template; onDone: () => void }) {
@@ -177,6 +184,7 @@ function TemplateForm({ template, onDone }: { template?: Template; onDone: () =>
     name: template?.name ?? '',
     maxParticipants: template ? String(template.maxParticipants) : '',
     teams: template?.teams ?? false,
+    allowedRanks: template?.allowedRanks ?? ([] as Rank[]),
   })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [saving, setSaving] = useState(false)
@@ -200,6 +208,7 @@ function TemplateForm({ template, onDone }: { template?: Template; onDone: () =>
         <Switch id="templateTeams" checked={form.teams} onCheckedChange={(teams) => setForm({ ...form, teams })} />
         <Label htmlFor="templateTeams">Com times (capitães e convites, como o Prime)</Label>
       </div>
+      <RanksField value={form.allowedRanks} onChange={(allowedRanks) => setForm({ ...form, allowedRanks })} />
     </FormShell>
   )
 }

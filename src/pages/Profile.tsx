@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { avatarUrl, errorMessage, initials, pb, POSITION_LABELS, useUser, type User } from '@/lib/pb'
+import { avatarUrl, errorMessage, initials, pb, POSITION_LABELS, RANK_LABELS, useUser, type User } from '@/lib/pb'
 import { phoneSchema } from '@/lib/phone'
 import { disablePush, enablePush, pushState, signOut, type PushState } from '@/lib/push'
 
@@ -82,6 +82,7 @@ function ProfileForm() {
 
             <Field label="Nome" name="name" defaultValue={user.name} autoComplete="name" error={errors.name} />
             <Field label="E-mail" name="email" value={user.email ?? ''} disabled readOnly />
+            <Field label="Rank" name="rank" value={RANK_LABELS[user.rank] ?? 'Regular'} disabled readOnly />
             <div className="grid gap-1">
               <PhoneField defaultValue={user.phone} error={errors.phone} />
               <span className="text-xs text-muted-foreground">Só você e os admins veem.</span>

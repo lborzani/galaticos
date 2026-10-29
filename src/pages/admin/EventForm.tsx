@@ -3,12 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Field, validate, type FieldErrors } from '@/components/form'
+import { RanksField } from '@/components/rank'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fromLocalInput, toLocalInput, type Court, type GEvent, type Template } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
-import { errorMessage, pb, useUser } from '@/lib/pb'
+import { errorMessage, pb, useUser, type Rank } from '@/lib/pb'
 
 const schema = z
   .object({
@@ -23,8 +24,11 @@ const schema = z
     path: ['registrationOpensAt'],
   })
 
-type Form = { template: string; kind: string; teams: boolean; title: string; eventDate: string; registrationOpensAt: string; court: string; maxParticipants: string }
-const EMPTY: Form = { template: '', kind: '', teams: false, title: '', eventDate: '', registrationOpensAt: '', court: '', maxParticipants: '' }
+type Form = {
+  template: string; kind: string; teams: boolean; title: string; eventDate: string; registrationOpensAt: string; court: string
+  maxParticipants: string; allowedRanks: Rank[]
+}
+const EMPTY: Form = { template: '', kind: '', teams: false, title: '', eventDate: '', registrationOpensAt: '', court: '', maxParticipants: '', allowedRanks: [] }
 
 export default function EventForm() {
   const { id } = useParams()
@@ -47,6 +51,7 @@ export default function EventForm() {
         registrationOpensAt: toLocalInput(ev.registrationOpensAt),
         court: ev.court,
         maxParticipants: String(ev.maxParticipants),
+        allowedRanks: ev.allowedRanks ?? [],
       })
       setLoaded(true)
     }, () => toast.error('Evento não encontrado'))
@@ -64,6 +69,7 @@ export default function EventForm() {
       kind: t?.name ?? '',
       teams: !!t?.teams,
       maxParticipants: t ? String(t.maxParticipants) : form.maxParticipants,
+      allowedRanks: t ? t.allowedRanks : form.allowedRanks,
       // preenche o título padrão sem atropelar um título digitado
       title: !form.title || form.title === form.kind ? (t?.name ?? '') : form.title,
     })
@@ -82,6 +88,7 @@ export default function EventForm() {
       registrationOpensAt: fromLocalInput(data.registrationOpensAt),
       court: data.court,
       maxParticipants: data.maxParticipants,
+      allowedRanks: form.allowedRanks,
     }
     setSaving(true)
     try {
@@ -136,11 +143,12 @@ export default function EventForm() {
           </Field>
           {courts?.length === 0 && (
             <p className="-mt-3 text-sm text-muted-foreground">
-              Nenhuma quadra cadastrada. <Link to="/admin"className="text-primary hover:underline">Cadastrar quadra</Link>
+              Nenhuma quadra cadastrada. <Link to="/admin" className="text-primary hover:underline">Cadastrar quadra</Link>
             </p>
           )}
           <Field label="Vagas" name="maxParticipants" type="number" inputMode="numeric" min={1} value={form.maxParticipants}
             onChange={(e) => set({ maxParticipants: e.target.value })} error={errors.maxParticipants} />
+          <RanksField value={form.allowedRanks} onChange={(allowedRanks) => set({ allowedRanks })} />
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
             <Button type="submit" disabled={saving} className="flex-1">{saving ? 'Salvando…' : 'Salvar'}</Button>

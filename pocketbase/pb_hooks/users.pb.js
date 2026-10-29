@@ -9,6 +9,7 @@ onRecordCreateRequest((e) => {
     throw new BadRequestError("Informe o telefone.", { phone: new ValidationError("required", "Obrigatório.") })
   }
   if (phone) e.record.set("phonePrivate", phone)
+  if (!e.record.getString("rank")) e.record.set("rank", "regular")
   e.next()
 }, "users")
 
@@ -34,12 +35,14 @@ onRecordValidate((e) => {
   }
 }, "users")
 
-// Só o dono e os admins recebem `phone` (inclusive em expand e realtime).
+// Só o dono e os admins recebem `phone`; só admins veem o banimento (inclusive em expand e realtime).
 onRecordEnrich((e) => {
   const auth = e.requestInfo.auth
-  if (auth && (auth.id === e.record.id || auth.getString("role") === "admin")) {
+  const admin = auth && auth.getString("role") === "admin"
+  if (auth && (auth.id === e.record.id || admin)) {
     e.record.withCustomData(true)
     e.record.set("phone", e.record.getString("phonePrivate"))
   }
+  if (admin) e.record.unhide("bannedAt", "banReason", "bannedBy")
   e.next()
 }, "users")
