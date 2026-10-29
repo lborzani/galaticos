@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Field, validate, type FieldErrors } from '@/components/form'
+import { Field, PhoneField, validate, type FieldErrors } from '@/components/form'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,11 +10,12 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { avatarUrl, errorMessage, initials, pb, POSITION_LABELS, useUser, type User } from '@/lib/pb'
+import { phoneSchema } from '@/lib/phone'
 import { disablePush, enablePush, pushState, signOut, type PushState } from '@/lib/push'
 
 const NO_POSITION = 'none'
 
-const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50, 'Máximo de 50 caracteres') })
+const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50, 'Máximo de 50 caracteres'), phone: phoneSchema })
 
 export default function Profile() {
   // remonta quando o registro muda (authRefresh, edição em outro aparelho): o formulário nunca salva dados velhos
@@ -32,8 +33,8 @@ function ProfileForm() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const name = new FormData(e.currentTarget).get('name')
-    const { data, errors } = validate(schema, { name })
+    const form = new FormData(e.currentTarget)
+    const { data, errors } = validate(schema, { name: form.get('name'), phone: form.get('phone') })
     setErrors(errors ?? {})
     if (!data) return
     setSaving(true)
@@ -41,6 +42,7 @@ function ProfileForm() {
       // update do próprio registro também atualiza pb.authStore
       await pb.collection('users').update<User>(user.id, {
         name: data.name,
+        phone: data.phone,
         position: position === NO_POSITION ? '' : position,
         availableForTeam: available,
         ...(avatar && { avatar }),
@@ -80,6 +82,10 @@ function ProfileForm() {
 
             <Field label="Nome" name="name" defaultValue={user.name} autoComplete="name" error={errors.name} />
             <Field label="E-mail" name="email" value={user.email ?? ''} disabled readOnly />
+            <div className="grid gap-1">
+              <PhoneField defaultValue={user.phone} error={errors.phone} />
+              <span className="text-xs text-muted-foreground">Só você e os admins veem.</span>
+            </div>
 
             <Field label="Posição" name="position">
               <Select value={position} onValueChange={setPosition}>

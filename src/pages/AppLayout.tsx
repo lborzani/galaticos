@@ -1,4 +1,5 @@
 import { House, Mail, Newspaper, ShieldCheck, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
+import { lazy, Suspense } from 'react'
 import { Navigate, NavLink, Outlet } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
@@ -6,12 +7,15 @@ import type { Invite } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
 import { avatarUrl, initials, isAdmin, pb, useUser, type User } from '@/lib/pb'
 
-type Item = { to: string; label: string; icon: LucideIcon; end?: boolean; count?: number }
+const PhoneGate = lazy(() => import('./PhoneGate'))
+
+type Item ={ to: string; label: string; icon: LucideIcon; end?: boolean; count?: number }
 
 /** Abas inferiores no celular, barra lateral a partir de md. */
 export function AppLayout() {
   const user = useUser()
   if (!user) return <Navigate to="/entrar" replace />
+  if (!user.phone) return <Suspense><PhoneGate user={user} /></Suspense>
   return <Shell user={user} />
 }
 

@@ -17,6 +17,8 @@ export const POSITION_LABELS: Record<PlayerPosition, string> = {
 export interface User extends RecordModel {
   email?: string
   name: string
+  /** +55…; só vem para o próprio usuário e para admins. */
+  phone?: string
   avatar: string
   position: PlayerPosition | ''
   availableForTeam: boolean

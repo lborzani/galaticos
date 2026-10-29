@@ -3,8 +3,9 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { Field, validate, type FieldErrors } from '@/components/form'
+import { Field, PhoneField, validate, type FieldErrors } from '@/components/form'
 import { errorMessage, pb } from '@/lib/pb'
+import { phoneSchema } from '@/lib/phone'
 import { AuthCard } from './AuthLayout'
 
 const email = z.string().trim().email('E-mail inválido')
@@ -78,7 +79,7 @@ export function Register() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50), email }).and(passwordPair)
+    const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50), email, phone: phoneSchema }).and(passwordPair)
     const { data, errors } = validate(schema, formData(e))
     setErrors(errors ?? {})
     if (!data) return
@@ -99,6 +100,7 @@ export function Register() {
       <form onSubmit={onSubmit} className="grid gap-4" noValidate>
         <Field label="Nome" name="name" autoComplete="name" error={errors.name} />
         <Field label="E-mail" name="email" type="email" autoComplete="email" error={errors.email} />
+        <PhoneField error={errors.phone} />
         <Field label="Senha" name="password" type="password" autoComplete="new-password" error={errors.password} />
         <Field label="Confirmar senha" name="passwordConfirm" type="password" autoComplete="new-password" error={errors.passwordConfirm} />
         {errors.form && <p className="text-sm text-destructive" role="alert">{errors.form}</p>}

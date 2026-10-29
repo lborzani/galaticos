@@ -11,11 +11,11 @@ export async function admin() {
 }
 
 /** Cria um usuário verificado e devolve um client autenticado como ele. */
-export async function member(name = 'Jogador', role: 'member' | 'admin' = 'member') {
+export async function member(name = 'Jogador', role: 'member' | 'admin' = 'member', phone = '+5511987654321') {
   const email = `u${crypto.randomUUID()}@test.local`
   const password = 'senha-forte-123'
   const root = await admin()
-  await root.collection('users').create({ email, password, passwordConfirm: password, name, role, verified: true })
+  await root.collection('users').create({ email, password, passwordConfirm: password, name, role, phone, verified: true })
   const pb = new PocketBase(pbUrl())
   await pb.collection('users').authWithPassword(email, password)
   return pb

@@ -12,6 +12,7 @@ import { formatDateTime, type EventStatus, type GEvent, type Registration } from
 import { useLiveList } from '@/lib/live'
 import { PrimeTeams } from './prime'
 import { avatarUrl, initials, pb, POSITION_LABELS, serverMessage, useUser } from '@/lib/pb'
+import { formatPhone, whatsappUrl } from '@/lib/phone'
 
 /** Ação do usuário (entrar/sair) + listas de confirmados e espera, ao vivo. */
 export function RegistrationPanel({ event, status }: { event: GEvent; status: EventStatus }) {
@@ -120,7 +121,15 @@ function PlayerList({ title, regs, empty, numbered }: { title: string; regs: Reg
                 <li key={r.id} className="flex items-center gap-3">
                   {numbered && <span className="w-5 text-right text-sm tabular-nums text-muted-foreground">{i + 1}</span>}
                   <Avatar size="sm"><AvatarImage src={avatarUrl(u ?? null)} alt="" /><AvatarFallback>{initials(u?.name ?? '?')}</AvatarFallback></Avatar>
-                  <span className="truncate text-sm">{u?.name ?? 'Jogador'}{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
+                  <div className="grid min-w-0">
+                    <span className="truncate text-sm">{u?.name ?? 'Jogador'}{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
+                    {/* o servidor só manda `phone` para admins (e o próprio dono) */}
+                    {u?.phone && r.user !== me && (
+                      <a href={whatsappUrl(u.phone)} target="_blank" rel="noreferrer" className="w-fit text-xs text-primary hover:underline">
+                        {formatPhone(u.phone)}
+                      </a>
+                    )}
+                  </div>
                   {r.status === 'attended' && <CircleCheck className="size-4 shrink-0 text-emerald-500" aria-label="presente" />}
                   {u?.position && <span className="ml-auto text-xs text-muted-foreground">{POSITION_LABELS[u.position]}</span>}
                 </li>
