@@ -1,6 +1,7 @@
 import { ClientResponseError, type RecordModel } from 'pocketbase'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, ScanLine, Trash2 } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
+import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Field, validate, type FieldErrors } from '@/components/form'
@@ -16,10 +17,14 @@ import type { Court, Template } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
 import { errorMessage, pb } from '@/lib/pb'
 
-export default function Config() {
+export default function Panel() {
   return (
     <div className="grid gap-6">
-      <h1 className="text-2xl font-bold">Configurações</h1>
+      <h1 className="text-2xl font-bold">Painel admin</h1>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Button asChild><Link to="/admin/eventos/novo"><Plus /> Novo evento</Link></Button>
+        <Button variant="outline" asChild><Link to="/admin/validar"><ScanLine /> Validar passaportes</Link></Button>
+      </div>
       <ConfigList<Court> collection="courts" title="Quadras" newLabel="Nova quadra"
         deleteNote="Só dá para apagar quadra sem eventos."
         // relação obrigatória: o PocketBase recusa apagar quadra que algum evento usa

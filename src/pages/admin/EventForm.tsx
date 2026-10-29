@@ -136,7 +136,7 @@ export default function EventForm() {
           </Field>
           {courts?.length === 0 && (
             <p className="-mt-3 text-sm text-muted-foreground">
-              Nenhuma quadra cadastrada. <Link to="/admin/config" className="text-primary hover:underline">Cadastrar quadra</Link>
+              Nenhuma quadra cadastrada. <Link to="/admin"className="text-primary hover:underline">Cadastrar quadra</Link>
             </p>
           )}
           <Field label="Vagas" name="maxParticipants" type="number" inputMode="numeric" min={1} value={form.maxParticipants}

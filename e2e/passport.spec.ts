@@ -32,7 +32,7 @@ test('admin lê o QR pela câmera e confirma presença; membro não acessa o sca
 
   // membro comum é mandado de volta para o início
   await loginAs(page, bia)
-  await page.goto('/admin')
+  await page.goto('/admin/validar')
   await expect(page).toHaveURL(/\/$/)
 
   const video = info.outputPath('qr.y4m')
@@ -45,7 +45,7 @@ test('admin lê o QR pela câmera e confirma presença; membro não acessa o sca
   await ctx.route(/cdn\.jsdelivr\.net|unpkg\.com|fastly\.jsdelivr/, (r) => r.abort())
   const adminPage = await ctx.newPage()
   await loginAs(adminPage, admin)
-  await adminPage.goto('/admin')
+  await adminPage.goto('/admin/validar')
 
   const result = adminPage.getByRole('status')
   await expect(result).toContainText('Bia Presente', { timeout: 15_000 })

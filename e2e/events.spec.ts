@@ -8,7 +8,7 @@ test('admin cadastra quadra e cria evento nela', async ({ page, makeUser }) => {
   const court = `Quadra do Parque ${Date.now()}${test.info().parallelIndex}`
   await loginAs(page, await makeUser({ role: 'admin' }))
   await page.goto('/')
-  await page.getByRole('link', { name: 'Configurações' }).click()
+  await page.getByRole('link', { name: 'Admin' }).click()
   await page.getByRole('button', { name: 'Nova quadra' }).click()
   await page.getByLabel('Nome').fill(court)
   await page.getByLabel('Endereço (opcional)').fill('Av. Paulista, 1000')
@@ -21,7 +21,6 @@ test('admin cadastra quadra e cria evento nela', async ({ page, makeUser }) => {
   await expect(page.getByText('Já existe uma quadra com esse nome')).toBeVisible()
   await page.getByRole('button', { name: 'Cancelar' }).click()
 
-  await page.goto('/')
   await page.getByRole('link', { name: 'Novo evento' }).click()
 
   await page.getByRole('combobox', { name: 'Template' }).click()
@@ -51,7 +50,7 @@ test('admin cria template com times e evento a partir dele', async ({ page, make
   const tpl = `Torneio ${Date.now()}${test.info().parallelIndex}`
   const court = await api.collection('courts').create({ name: `Quadra T ${Date.now()}${test.info().parallelIndex}` })
   await loginAs(page, await makeUser({ role: 'admin' }))
-  await page.goto('/admin/config')
+  await page.goto('/admin')
   await page.getByRole('button', { name: 'Novo template' }).click()
   await page.getByLabel('Nome').fill(tpl)
   await page.getByLabel('Vagas').fill('4')
@@ -82,7 +81,7 @@ test('quadra com evento não pode ser apagada', async ({ page, makeUser, makeEve
   const court = await api.collection('courts').create({ name: `Quadra Usada ${Date.now()}${test.info().parallelIndex}` })
   await makeEvent(admin.id, { court: court.id })
   await loginAs(page, admin)
-  await page.goto('/admin/config')
+  await page.goto('/admin')
   await page.getByRole('group', { name: court.name }).getByRole('button', { name: 'Apagar' }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Apagar' }).click()
   await expect(page.getByText('Essa quadra tem eventos; não dá para apagar.')).toBeVisible()
@@ -122,13 +121,15 @@ test('membro não vê nem acessa ações de admin', async ({ page, makeUser, mak
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Próximos' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Novo evento' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Admin' })).toHaveCount(0)
 
   await page.goto(`/evento/${ev.id}`)
   await expect(page.getByRole('heading', { name: ev.title })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Editar' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Cancelar evento' })).toHaveCount(0)
 
-  await page.goto('/admin/eventos/novo')
-  await expect(page).toHaveURL(/\/$/)
+  for (const url of ['/admin', '/admin/eventos/novo']) {
+    await page.goto(url)
+    await expect(page).toHaveURL(/\/$/)
+  }
 })
