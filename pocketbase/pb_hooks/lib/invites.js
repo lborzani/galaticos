@@ -16,7 +16,7 @@ function openPrimeEvent(txApp, eventId) {
   } catch (_) {
     throw new NotFoundError("Evento não encontrado.")
   }
-  if (event.getString("type") !== "prime") throw new BadRequestError("Convites são só para eventos Prime.")
+  if (!event.getBool("teams")) throw new BadRequestError("Convites são só para eventos com times.")
   if (event.getString("cancelledAt")) throw new BadRequestError("Esse evento foi cancelado.")
   if (Math.floor(Date.now() / 1000) >= event.getDateTime("eventDate").unix()) throw new BadRequestError("O evento já começou.")
   return event

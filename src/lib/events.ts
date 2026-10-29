@@ -1,21 +1,32 @@
 import type { RecordModel } from 'pocketbase'
 
-export type EventType = 'wednesday' | 'sunday' | 'custom' | 'prime'
 export type EventStatus = 'upcoming' | 'open' | 'full' | 'in_progress' | 'finished' | 'cancelled'
 
 export interface GEvent extends RecordModel {
   title: string
-  type: EventType
+  kind: string
+  /** Modo times (capitães e convites, o Prime). */
+  teams: boolean
   eventDate: string
   registrationOpensAt: string
-  location: string
+  court: string
   maxParticipants: number
   createdBy: string
   cancelledAt: string
   cancellationReason: string
   confirmedCount: number
   waitlistCount: number
+  expand?: { court?: Court }
 }
+
+export interface Court extends RecordModel {
+  name: string
+  address: string
+}
+
+/** Busque o evento com `expand: 'court'` para ter o nome da quadra. */
+export const courtName = (ev: GEvent) => ev.expand?.court?.name ?? ''
+export const mapsUrl = (address: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
 
 export type RegistrationStatus = 'confirmed' | 'waitlist' | 'cancelled' | 'attended'
 
@@ -37,15 +48,14 @@ export interface Invite extends RecordModel {
   expand?: { event?: GEvent; captain?: import('./pb').User; player?: import('./pb').User }
 }
 
-export const TYPE_LABELS: Record<EventType, string> = {
-  wednesday: 'Bate-bola Quarta',
-  sunday: 'Bate-bola Domingo',
-  custom: 'Personalizado',
-  prime: 'Prime',
+/** Preset do formulário de evento; o evento guarda uma cópia de `name` (em `kind`) e de `teams`. */
+export interface Template extends RecordModel {
+  name: string
+  maxParticipants: number
+  teams: boolean
 }
 
-/** Vagas fixas por tipo (espelha pb_hooks/events.pb.js). `custom` é livre. */
-export const FIXED_MAX: Partial<Record<EventType, number>> = { wednesday: 3, sunday: 28, prime: 3 }
+export const kindLabel = (ev: GEvent) => ev.kind || 'Personalizado'
 
 export const STATUS_META: Record<EventStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   upcoming: { label: 'Em breve', variant: 'outline' },

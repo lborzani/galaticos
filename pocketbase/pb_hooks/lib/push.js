@@ -78,9 +78,10 @@ function runReminders(app) {
 
   const send = (event, which) => {
     const title = event.getString("title")
+    const court = app.findRecordById("courts", event.getString("court")).getString("name")
     notify(app, audience(app, event.id, false), which === "5m"
       ? { title: "Já está começando!", body: `${title} começa em 5 minutos!`, url: eventUrl(event), tag: "reminder-" + event.id }
-      : { title: "Falta 1 hora!", body: `${title} começa em 1 hora, em ${event.getString("location")}.`, url: eventUrl(event), tag: "reminder-" + event.id })
+      : { title: "Falta 1 hora!", body: `${title} começa em 1 hora, em ${court}.`, url: eventUrl(event), tag: "reminder-" + event.id })
     sent.push({ event: event.id, which })
   }
 

@@ -7,7 +7,7 @@ const cancel = (pb: PocketBase, eventId: string) => pb.send(`/api/g/events/${eve
 
 async function newEvent(over: Record<string, unknown> = {}) {
   const adm = await member('Admin', 'admin')
-  const ev = await adm.collection('events').create(eventData(adm.authStore.record!.id, { type: 'custom', maxParticipants: 2, ...over }))
+  const ev = await adm.collection('events').create(eventData(adm.authStore.record!.id, { maxParticipants: 2, ...over }))
   return { adm, ev }
 }
 
@@ -31,7 +31,7 @@ describe('inscrições', () => {
   })
 
   it('não passa da lotação com inscrições simultâneas', async () => {
-    const { ev } = await newEvent({ type: 'sunday', maxParticipants: 28 })
+    const { ev } = await newEvent({ maxParticipants: 28 })
     const players = await Promise.all(Array.from({ length: 40 }, (_, i) => member(`Jog ${i}`)))
     const results = await Promise.allSettled(players.map((pb) => register(pb, ev.id)))
     expect(results.filter((r) => r.status === 'rejected')).toHaveLength(0)

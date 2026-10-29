@@ -17,13 +17,13 @@ describe('events', () => {
     await expect(adm.collection('events').create(eventData(other.authStore.record!.id))).rejects.toThrow()
   })
 
-  it('vagas fixas por tipo e livre no personalizado', async () => {
+  it('vagas livres; modo times não muda depois de criado, o rótulo sim', async () => {
     const adm = await member('Admin', 'admin')
     const uid = adm.authStore.record!.id
-    await expect(adm.collection('events').create(eventData(uid, { type: 'sunday', maxParticipants: 30 }))).rejects.toMatchObject({ status: 400 })
-    await expect(adm.collection('events').create(eventData(uid, { type: 'wednesday', maxParticipants: 28 }))).rejects.toMatchObject({ status: 400 })
-    const custom = await adm.collection('events').create(eventData(uid, { type: 'custom', maxParticipants: 12 }))
-    expect(custom.maxParticipants).toBe(12)
+    const ev = await adm.collection('events').create(eventData(uid, { kind: 'Bate-bola Domingo', teams: true, maxParticipants: 30 }))
+    expect([ev.kind, ev.teams, ev.maxParticipants]).toEqual(['Bate-bola Domingo', true, 30])
+    await expect(adm.collection('events').update(ev.id, { teams: false })).rejects.toThrow()
+    expect((await adm.collection('events').update(ev.id, { kind: 'Domingão' })).kind).toBe('Domingão')
   })
 
   it('lista precisa abrir antes do evento', async () => {

@@ -20,7 +20,7 @@ const received = async (endpoint: string) =>
 
 async function eventWith(over: Record<string, unknown> = {}) {
   const adm = await member('Admin', 'admin')
-  const ev = await adm.collection('events').create(eventData(uid(adm), { type: 'custom', maxParticipants: 1, ...over }))
+  const ev = await adm.collection('events').create(eventData(uid(adm), { maxParticipants: 1, ...over }))
   return { adm, ev }
 }
 
@@ -83,14 +83,14 @@ describe('push', () => {
 
     await runReminders()
     await runReminders() // idempotente
-    expect(await received(d1)).toEqual([expect.objectContaining({ title: 'Falta 1 hora!' })])
+    expect(await received(d1)).toEqual([expect.objectContaining({ title: 'Falta 1 hora!', body: expect.stringContaining('em Quadra.') })])
     expect(await received(d2)).toEqual([expect.objectContaining({ title: 'Já está começando!' })]) // só o de 5 min
     expect((await received(d3)).map((p) => p.title)).toEqual(['Evento cancelado'])
     expect(await received(dW)).toEqual([])
   })
 
   it('membro aceito do time Prime também recebe lembrete', async () => {
-    const { ev } = await eventWith({ type: 'prime', maxParticipants: 3, eventDate: inHours(50 / 60) })
+    const { ev } = await eventWith({ teams: true, maxParticipants: 3, eventDate: inHours(50 / 60) })
     const cap = await member('Capitão')
     const jog = await member('Do Time')
     await jog.collection('users').update(uid(jog), { availableForTeam: true })

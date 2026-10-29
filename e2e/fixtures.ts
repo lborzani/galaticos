@@ -32,9 +32,10 @@ export const test = base.extend<Fixtures>({
   makeEvent: async ({ api }, use) => {
     await use(async (createdBy, over = {}) => {
       const title = `Evento ${unique()}`
+      const court = over.court ?? (await api.collection('courts').create({ name: `Quadra ${unique()}` })).id
       return api.collection('events').create({
-        title, type: 'custom', eventDate: inHours(48), registrationOpensAt: inHours(-1),
-        location: 'Quadra E2E', maxParticipants: 10, createdBy, ...over,
+        title, eventDate: inHours(48), registrationOpensAt: inHours(-1),
+        court, maxParticipants: 10, createdBy, ...over,
       })
     })
   },

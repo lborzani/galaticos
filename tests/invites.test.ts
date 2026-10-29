@@ -13,7 +13,7 @@ async function available(name: string) {
 
 async function primeWithCaptain() {
   const adm = await member('Admin', 'admin')
-  const ev = await adm.collection('events').create(eventData(uid(adm), { type: 'prime', maxParticipants: 3, title: 'Prime' }))
+  const ev = await adm.collection('events').create(eventData(uid(adm), { teams: true, maxParticipants: 3, title: 'Prime' }))
   const cap = await member('Capitã')
   await post(cap, `/api/g/events/${ev.id}/register`)
   return { adm, ev, cap }
@@ -37,7 +37,7 @@ describe('convites Prime', () => {
     const intruso = await member('Intruso')
     await expect(post(intruso, `/api/g/events/${ev.id}/invites`, { player: uid(p) })).rejects.toMatchObject({ status: 403 })
 
-    const comum = await adm.collection('events').create(eventData(uid(adm), { type: 'custom', maxParticipants: 5 }))
+    const comum = await adm.collection('events').create(eventData(uid(adm), { maxParticipants: 5 }))
     await post(intruso, `/api/g/events/${comum.id}/register`)
     await expect(post(intruso, `/api/g/events/${comum.id}/invites`, { player: uid(p) })).rejects.toMatchObject({ status: 400 })
   })

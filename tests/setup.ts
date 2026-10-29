@@ -51,6 +51,16 @@ export default async function setup(project: TestProject) {
   }
 
   project.provide('pbUrl', PB_URL)
+  // quadra padrão dos eventos de teste
+  const su = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity: SUPERUSER.email, password: SUPERUSER.password }),
+  }).then((r) => r.json())
+  const court = await fetch(`${PB_URL}/api/collections/courts/records`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: su.token },
+    body: JSON.stringify({ name: 'Quadra' }),
+  }).then((r) => r.json())
+  project.provide('courtId', court.id)
   return () => {
     proc.kill()
     push.close()
@@ -59,5 +69,5 @@ export default async function setup(project: TestProject) {
 }
 
 declare module 'vitest' {
-  export interface ProvidedContext { pbUrl: string }
+  export interface ProvidedContext { pbUrl: string; courtId: string }
 }

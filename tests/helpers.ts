@@ -27,10 +27,9 @@ const inHours = (h: number) => new Date(Date.now() + h * 3600_000).toISOString()
 export function eventData(createdBy: string, over: Record<string, unknown> = {}) {
   return {
     title: 'Bate-bola Domingo',
-    type: 'sunday',
     eventDate: inHours(48),
     registrationOpensAt: inHours(-1),
-    location: 'Quadra',
+    court: inject('courtId'),
     maxParticipants: 28,
     createdBy,
     ...over,

@@ -12,14 +12,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { deriveStatus, formatDateTime, isPast, TYPE_LABELS, type GEvent } from '@/lib/events'
+import { courtName, deriveStatus, formatDateTime, isPast, kindLabel, mapsUrl, type GEvent } from '@/lib/events'
 import { useLiveRecord, useNow } from '@/lib/live'
 import { errorMessage, isAdmin, pb, useUser } from '@/lib/pb'
 
 export default function EventDetail() {
   const { id } = useParams()
   const user = useUser()!
-  const { data: event, error } = useLiveRecord<GEvent>('events', id!)
+  const { data: event, error } = useLiveRecord<GEvent>('events', id!, 'court')
   const now = useNow(1000) // botão aparece no segundo em que a lista abre
 
   if (error) return <p className="text-destructive" role="alert">Não foi possível carregar o evento.</p>
@@ -31,7 +31,7 @@ export default function EventDetail() {
   return (
     <div className="grid gap-6">
       <div className="grid gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-primary">{TYPE_LABELS[event.type]}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-primary">{kindLabel(event)}</p>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">{event.title}</h1>
           <StatusBadge status={status} />
@@ -47,7 +47,14 @@ export default function EventDetail() {
       <Card>
         <CardContent className="grid gap-3 text-sm">
           <Info icon={CalendarDays}>{formatDateTime(event.eventDate)}</Info>
-          <Info icon={MapPin}>{event.location}</Info>
+          <Info icon={MapPin}>
+            {courtName(event)}
+            {event.expand?.court?.address && (
+              <a href={mapsUrl(event.expand.court.address)} target="_blank" rel="noreferrer" className="block text-muted-foreground hover:underline">
+                {event.expand.court.address}
+              </a>
+            )}
+          </Info>
           <Info icon={Clock}>Lista abre {formatDateTime(event.registrationOpensAt)}</Info>
           <Info icon={Users}>{event.maxParticipants} vagas</Info>
         </CardContent>
@@ -66,7 +73,7 @@ export default function EventDetail() {
 }
 
 function Info({ icon: Icon, children }: { icon: typeof MapPin; children: React.ReactNode }) {
-  return <p className="flex items-center gap-3"><Icon className="size-4 text-muted-foreground" /> {children}</p>
+  return <div className="flex items-center gap-3"><Icon className="size-4 shrink-0 text-muted-foreground" /> <div>{children}</div></div>
 }
 
 function CancelEvent({ event }: { event: GEvent }) {

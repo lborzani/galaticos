@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { useNow } from '@/lib/live'
-import { deriveStatus, formatDateTime, isPast, parseDate, STATUS_META, TYPE_LABELS, type EventStatus, type GEvent } from '@/lib/events'
+import { courtName, deriveStatus, formatDateTime, isPast, kindLabel, parseDate, STATUS_META, type EventStatus, type GEvent } from '@/lib/events'
 
 export function StatusBadge({ status }: { status: EventStatus }) {
   const meta = STATUS_META[status]
@@ -16,13 +16,13 @@ export function EventCard({ event, now }: { event: GEvent; now: Date }) {
       <Card className="gap-2 px-4 py-4 transition-colors hover:bg-muted/40">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-primary">{TYPE_LABELS[event.type]}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-primary">{kindLabel(event)}</p>
             <h3 className="truncate font-semibold">{event.title}</h3>
           </div>
           <StatusBadge status={deriveStatus(event, now)} />
         </div>
         <p className="flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="size-4" /> {formatDateTime(event.eventDate)}</p>
-        <p className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="size-4" /> {event.location}</p>
+        <p className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="size-4" /> {courtName(event)}</p>
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="size-4" /> {event.confirmedCount}/{event.maxParticipants} confirmados
           {event.waitlistCount > 0 && ` · ${event.waitlistCount} na espera`}

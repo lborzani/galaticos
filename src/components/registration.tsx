@@ -32,9 +32,9 @@ export function RegistrationPanel({ event, status }: { event: GEvent; status: Ev
   return (
     <div className="grid gap-6">
       <MyRegistration event={event} status={status} mine={mine} waitRank={mine ? waitlist.indexOf(mine) + 1 : 0} />
-      <PlayerList title={`${event.type === 'prime' ? 'Capitães' : 'Confirmados'} (${confirmed.length}/${event.maxParticipants})`} regs={confirmed} empty="Ninguém confirmado ainda." />
+      <PlayerList title={`${event.teams ? 'Capitães' : 'Confirmados'} (${confirmed.length}/${event.maxParticipants})`} regs={confirmed} empty="Ninguém confirmado ainda." />
       {waitlist.length > 0 && <PlayerList title={`Lista de espera (${waitlist.length})`} regs={waitlist} numbered />}
-      {event.type === 'prime' && <PrimeTeams event={event} captains={confirmed} canInvite={status === 'open' || status === 'full' || status === 'upcoming'} />}
+      {event.teams && <PrimeTeams event={event} captains={confirmed} canInvite={status === 'open' || status === 'full' || status === 'upcoming'} />}
     </div>
   )
 }

@@ -18,7 +18,7 @@ test('capitão convida, jogador aceita pela inbox e o time atualiza ao vivo para
   const capita = await makeUser({ name: CAP })
   const jogador = await makeUser({ name: JOG })
   await api.collection('users').update(jogador.id, { availableForTeam: true, position: 'ponteiro' })
-  const ev = await makeEvent(admin.id, { type: 'prime', maxParticipants: 3, title: 'Prime de Teste' })
+  const ev = await makeEvent(admin.id, { teams: true, maxParticipants: 3, title: 'Prime de Teste' })
 
   // capitã entra na lista e vira capitã
   await loginAs(page, capita)
@@ -64,7 +64,7 @@ test('capitão cancela convite pendente e jogador recusa outro', async ({ browse
   const a = await makeUser({ name: ANA })
   const b = await makeUser({ name: BETO })
   for (const u of [a, b]) await api.collection('users').update(u.id, { availableForTeam: true })
-  const ev = await makeEvent(admin.id, { type: 'prime', maxParticipants: 3 })
+  const ev = await makeEvent(admin.id, { teams: true, maxParticipants: 3 })
 
   await loginAs(page, capita)
   await page.goto(`/evento/${ev.id}`)
