@@ -1,5 +1,5 @@
 import { ClientResponseError, type RecordModel } from 'pocketbase'
-import { Pencil, Plus, ScanLine, Trash2, Users as UsersIcon } from 'lucide-react'
+import { Dumbbell, Pencil, Plus, ScanLine, Trash2, Users as UsersIcon } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
@@ -22,11 +22,12 @@ export default function Panel() {
   return (
     <div className="grid gap-6">
       <h1 className="text-2xl font-bold">Painel admin</h1>
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <Button asChild><Link to="/admin/eventos/novo"><Plus /> Novo evento</Link></Button>
         {/* scanner só no celular (rota mostra aviso no desktop) */}
         <Button variant="outline" className="lg:hidden" asChild><Link to="/admin/validar"><ScanLine /> Validar passaportes</Link></Button>
         <Button variant="outline" asChild><Link to="/admin/usuarios"><UsersIcon /> Usuários</Link></Button>
+        <Button variant="outline" asChild><Link to="/treinos"><Dumbbell /> Treinos</Link></Button>
       </div>
       <ConfigList<Court> collection="courts" title="Quadras" newLabel="Nova quadra"
         deleteNote="Só dá para apagar quadra sem eventos."

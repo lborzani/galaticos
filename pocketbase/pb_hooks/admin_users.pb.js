@@ -1,6 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Rank, papel e banimento: só por estas rotas, só admin.
+// Rank, papel, verificação e banimento: só por estas rotas, só admin.
 routerAdd("POST", "/api/g/admin/users/{id}", (e) => {
   if (e.auth.getString("role") !== "admin") throw new ForbiddenError("Só admins gerenciam usuários.")
   const { update } = require(`${__hooks}/lib/admin_users.js`)

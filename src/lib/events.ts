@@ -31,6 +31,47 @@ export interface Court extends RecordModel {
 export const courtName = (ev: GEvent) => ev.expand?.court?.name ?? ''
 export const mapsUrl = (address: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
 
+/** Dias da grade da turma; mesma ordem de Date.getUTCDay() (pb_migrations/1761790000_trainings.js). */
+export const WEEKDAY_LABELS = { dom: 'Dom', seg: 'Seg', ter: 'Ter', qua: 'Qua', qui: 'Qui', sex: 'Sex', sab: 'Sáb' }
+export type Weekday = keyof typeof WEEKDAY_LABELS
+
+/** Turma do professor: grade semanal fixa; as sessões (`trainings`) o servidor gera. */
+export interface TrainingClass extends RecordModel {
+  name: string
+  court: string
+  teacher: string
+  weekdays: Weekday[]
+  startTime: string
+  durationMin: number
+  expand?: { court?: Court; teacher?: import('./pb').User }
+}
+
+export const scheduleLabel = (c: TrainingClass) =>
+  `${(Object.keys(WEEKDAY_LABELS) as Weekday[]).filter((d) => c.weekdays.includes(d)).map((d) => WEEKDAY_LABELS[d]).join(', ')} · ${c.startTime} · ${c.durationMin} min`
+
+export interface Training extends RecordModel {
+  class: string
+  startsAt: string
+  endsAt: string
+  cancelledAt: string
+  cancellationReason: string
+  expand?: { class?: TrainingClass }
+}
+
+/** Matrícula; `token` é o passaporte de treino (o mesmo em todas as sessões da turma). */
+export interface Enrollment extends RecordModel {
+  class: string
+  student: string
+  token: string
+  expand?: { class?: TrainingClass; student?: import('./pb').User }
+}
+
+export interface Attendance extends RecordModel {
+  training: string
+  student: string
+  attendedBy: string
+}
+
 export type RegistrationStatus = 'confirmed' | 'waitlist' | 'cancelled' | 'attended'
 
 export interface Registration extends RecordModel {

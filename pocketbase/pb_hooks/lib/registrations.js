@@ -115,7 +115,7 @@ function checkPassport(txApp, token) {
   if (event.getString("cancelledAt")) throw new BadRequestError("Esse evento foi cancelado.")
   if (status === "cancelled") throw new BadRequestError(`${user.getString("name")} cancelou a inscrição.`)
   if (status === "waitlist") throw new BadRequestError(`${user.getString("name")} está na lista de espera, não confirmado.`)
-  return { registration: reg, event, user, alreadyAttended: status === "attended" }
+  return { kind: "event", registration: reg, event, user, alreadyAttended: status === "attended" }
 }
 
 function attend(txApp, token, adminId) {

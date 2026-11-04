@@ -4,7 +4,7 @@ import { createBrowserRouter, Outlet, RouterProvider } from 'react-router'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
 import { UpdatePrompt } from '@/UpdatePrompt'
-import { AppLayout, MobileOnly, RequireAdmin } from '@/pages/AppLayout'
+import { AppLayout, MobileOnly, RequireAdmin, RequireTeacher } from '@/pages/AppLayout'
 import { AuthLayout } from '@/pages/auth/AuthLayout'
 import Home from '@/pages/Home'
 import './index.css'
@@ -40,6 +40,16 @@ const router = createBrowserRouter([
       { element: <MobileOnly />, children: [{ path: '/passaporte', lazy: page(() => import('@/pages/Passport')) }] },
       { path: '/convites', lazy: page(() => import('@/pages/Inbox')) },
       { path: '/evento/:id', lazy: page(() => import('@/pages/EventDetail')) },
+      {
+        element: <RequireTeacher />,
+        children: [
+          { path: '/treinos', lazy: page(() => import('@/pages/trainings/Trainings')) },
+          { path: '/treinos/turmas/nova', lazy: page(() => import('@/pages/trainings/ClassForm')) },
+          { path: '/treinos/turmas/:id', lazy: page(() => import('@/pages/trainings/ClassForm')) },
+          { path: '/treinos/sessao/:id', lazy: page(() => import('@/pages/trainings/Session')) },
+          { element: <MobileOnly />, children: [{ path: '/treinos/validar', lazy: page(() => import('@/pages/admin/Scanner')) }] },
+        ],
+      },
       {
         element: <RequireAdmin />,
         children: [

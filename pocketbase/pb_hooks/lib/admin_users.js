@@ -3,7 +3,7 @@
 // Gestão de usuários pelo admin. Funções recebem o txApp de um runInTransaction.
 
 const RANKS = ["regular", "mitico", "lendario"]
-const ROLES = ["member", "admin"]
+const ROLES = ["member", "admin", "professor"]
 
 function loadUser(txApp, id) {
   try {
@@ -13,7 +13,7 @@ function loadUser(txApp, id) {
   }
 }
 
-/** Muda rank e/ou papel. O admin não muda o próprio papel (sempre sobra um admin). */
+/** Muda rank e/ou papel, ou verifica a conta. O admin não muda o próprio papel (sempre sobra um admin). */
 function update(txApp, adminId, userId, body) {
   const user = loadUser(txApp, userId)
   if (body.rank !== undefined) {
@@ -25,6 +25,8 @@ function update(txApp, adminId, userId, body) {
     if (userId === adminId) throw new BadRequestError("Você não pode mudar o próprio papel.")
     user.set("role", body.role)
   }
+  // libera conta sem o e-mail de confirmação (SES em sandbox não entrega para qualquer endereço)
+  if (body.verified === true) user.set("verified", true)
   txApp.saveNoValidate(user) // conta antiga pode não ter telefone
 }
 

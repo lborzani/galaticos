@@ -1,4 +1,4 @@
-import { House, Mail, Newspaper, ShieldCheck, Smartphone, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
+import { Dumbbell, House, Mail, Newspaper, ShieldCheck, Smartphone, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
 import { lazy, Suspense, useSyncExternalStore } from 'react'
 import { Navigate, NavLink, Outlet } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import type { Invite } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
-import { avatarUrl, initials, isAdmin, pb, useUser, type User } from '@/lib/pb'
+import { avatarUrl, canTeach, initials, isAdmin, pb, useUser, type User } from '@/lib/pb'
 
 const PhoneGate = lazy(() => import('./PhoneGate'))
 
@@ -29,6 +29,7 @@ function Shell({ user }: { user: User }) {
     { to: '/posts', label: 'Posts', icon: Newspaper },
     { to: '/passaporte', label: 'Passaporte', icon: Ticket, mobileOnly: true },
     { to: '/convites', label: 'Convites', icon: Mail, count: pending?.length },
+    ...(user.role === 'professor' ? [{ to: '/treinos', label: 'Treinos', icon: Dumbbell }] : []),
     ...(isAdmin(user) ? [{ to: '/admin', label: 'Admin', icon: ShieldCheck }] : []),
     { to: '/perfil', label: 'Perfil', icon: UserIcon },
   ]
@@ -114,4 +115,9 @@ export function MobileOnly() {
 /** Barra rotas de admin para quem não é admin (a API também recusa). */
 export function RequireAdmin() {
   return isAdmin(useUser()) ? <Outlet /> : <Navigate to="/" replace />
+}
+
+/** Área de treinos: professor ou admin (a API também recusa). */
+export function RequireTeacher() {
+  return canTeach(useUser()) ? <Outlet /> : <Navigate to="/" replace />
 }

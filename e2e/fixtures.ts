@@ -11,7 +11,7 @@ const inHours = (h: number) => new Date(Date.now() + h * 3600_000).toISOString()
 type Fixtures = {
   /** Client autenticado como superuser, para preparar dados sem passar pela UI. */
   api: PocketBase
-  makeUser: (opts?: { name?: string; role?: 'admin'; verified?: boolean; phone?: string }) => Promise<TestUser>
+  makeUser: (opts?: { name?: string; role?: 'admin' | 'professor'; verified?: boolean; phone?: string }) => Promise<TestUser>
   makeEvent: (createdBy: string, over?: Record<string, unknown>) => Promise<{ id: string; title: string }>
 }
 

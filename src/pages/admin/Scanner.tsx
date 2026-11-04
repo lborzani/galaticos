@@ -6,13 +6,20 @@ import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { formatDateTime, type GEvent, type Registration } from '@/lib/events'
+import { formatDateTime, type GEvent, type Registration, type Training, type TrainingClass } from '@/lib/events'
 import { avatarUrl, initials, pb, POSITION_LABELS, serverMessage, type User } from '@/lib/pb'
 
 // wasm servido pelo próprio app (sem CDN): funciona offline e self-hosted
 setZXingModuleOverrides({ locateFile: (path: string, prefix: string) => (path.endsWith('.wasm') ? wasmUrl : prefix + path) })
 
-type Lookup = { registration: Registration; event: GEvent; user: User; alreadyAttended: boolean }
+/** Passaporte de evento (admin) ou de treino (admin ou professor da turma): pb_hooks/lib/trainings.js. */
+type Lookup = { user: User; alreadyAttended: boolean } & (
+  | { kind: 'event'; registration: Registration; event: GEvent }
+  | { kind: 'training'; training: Training; class: TrainingClass }
+)
+
+const lookupLabel = (d: Lookup) =>
+  d.kind === 'event' ? `${d.event.title} · ${formatDateTime(d.event.eventDate)}` : `Treino ${d.class.name} · ${formatDateTime(d.training.startsAt)}`
 type State =
   | { phase: 'scanning' }
   | { phase: 'found'; token: string; data: Lookup }
@@ -117,7 +124,7 @@ export default function Scanner() {
               <div className="min-w-0">
                 <p className="truncate text-lg font-semibold">{state.data.user.name}</p>
                 {state.data.user.position && <p className="text-sm text-muted-foreground">{POSITION_LABELS[state.data.user.position]}</p>}
-                <p className="text-sm text-muted-foreground">{state.data.event.title} · {formatDateTime(state.data.event.eventDate)}</p>
+                <p className="text-sm text-muted-foreground">{lookupLabel(state.data)}</p>
               </div>
             </div>
             {state.data.alreadyAttended ? (

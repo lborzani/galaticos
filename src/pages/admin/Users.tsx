@@ -18,6 +18,8 @@ import { useLiveList } from '@/lib/live'
 import { avatarUrl, initials, pb, RANK_LABELS, serverMessage, useUser, type Rank, type User } from '@/lib/pb'
 import { formatPhone } from '@/lib/phone'
 
+const ROLE_LABELS = { member: 'Membro', professor: 'Professor', admin: 'Admin' }
+
 /** Ações de admin sobre um usuário (pb_hooks/admin_users.pb.js). */
 async function adminCall(path: string, body: object | undefined, ok: string) {
   try {
@@ -65,11 +67,18 @@ function UserCard({ user, self }: { user: User; self: boolean }) {
             <p className="flex min-w-0 items-center gap-2 font-medium">
               <span className="truncate">{user.name}{self && <span className="text-muted-foreground"> (você)</span>}</span>
               <RankBadge rank={user.rank} />
-              {user.role === 'admin' && <Badge variant="secondary">Admin</Badge>}
+              {(user.role === 'admin' || user.role === 'professor') && <Badge variant="secondary">{ROLE_LABELS[user.role]}</Badge>}
             </p>
             <p className="text-sm text-muted-foreground">{user.phone ? formatPhone(user.phone) : 'Sem telefone'}</p>
           </div>
         </div>
+
+        {!user.verified && (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/40 p-3">
+            <p className="text-sm text-amber-500">E-mail não confirmado: ainda não consegue entrar.</p>
+            <Button size="sm" variant="outline" onClick={() => adminCall(user.id, { verified: true }, `Conta de ${user.name} liberada`)}>Liberar conta</Button>
+          </div>
+        )}
 
         {user.bannedAt ? (
           <div className="grid gap-3">
@@ -90,11 +99,10 @@ function UserCard({ user, self }: { user: User; self: boolean }) {
             <div className="grid gap-2">
               <Label htmlFor={`role-${user.id}`}>Papel</Label>
               <Select value={user.role || 'member'} disabled={self}
-                onValueChange={(role) => adminCall(user.id, { role }, role === 'admin' ? `${user.name} agora é admin` : `${user.name} agora é membro`)}>
+                onValueChange={(role) => adminCall(user.id, { role }, `${user.name} agora é ${ROLE_LABELS[role as keyof typeof ROLE_LABELS].toLowerCase()}`)}>
                 <SelectTrigger id={`role-${user.id}`} className="w-full" aria-label={`Papel de ${user.name}`}><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="member">Membro</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  {Object.entries(ROLE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

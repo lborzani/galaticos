@@ -11,7 +11,7 @@ export async function admin() {
 }
 
 /** Cria um usuário verificado e devolve um client autenticado como ele. */
-export async function member(name = 'Jogador', role: 'member' | 'admin' = 'member', phone = '+5511987654321') {
+export async function member(name = 'Jogador', role: 'member' | 'admin' | 'professor' = 'member', phone = '+5511987654321') {
   const email = `u${crypto.randomUUID()}@test.local`
   const password = 'senha-forte-123'
   const root = await admin()

@@ -31,13 +31,15 @@ export const rankAllowed = (allowed: Rank[] | undefined, rank: Rank) => !allowed
 
 export interface User extends RecordModel {
   email?: string
+  /** E-mail confirmado (ou conta liberada pelo admin). */
+  verified?: boolean
   name: string
   /** +55…; só vem para o próprio usuário e para admins. */
   phone?: string
   avatar: string
   position: PlayerPosition | ''
   availableForTeam: boolean
-  role: 'member' | 'admin' | ''
+  role: 'member' | 'admin' | 'professor' | ''
   rank: Rank
   /** Banimento: só vem para admins. */
   bannedAt?: string
@@ -60,6 +62,8 @@ export function initials(name: string) {
 }
 
 export const isAdmin = (user: User | null) => user?.role === 'admin'
+/** Acessa a área de treinos: admin ou professor. */
+export const canTeach = (user: User | null) => user?.role === 'admin' || user?.role === 'professor'
 
 export function avatarUrl(user: Pick<User, 'avatar' | 'collectionId' | 'id'> | null, thumb = '96x96') {
   return user?.avatar ? pb.files.getURL(user, user.avatar, { thumb }) : undefined
