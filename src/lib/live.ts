@@ -4,6 +4,29 @@ import { pb } from './pb'
 
 type Live<T> = { data: T | undefined; error: boolean }
 
+// Uma assinatura do SDK por tópico, repassada a todos os hooks. O SDK (0.28) perde o 2º listener de um tópico
+// já enviado se ele chega enquanto o realtime conecta: fica em `subscriptions` mas nunca vai para o EventSource.
+const topics = new Map<string, { fns: Set<() => void>; unsub: Promise<() => Promise<void>> }>()
+
+function listen(collection: string, topic: string, fn: () => void) {
+  const key = `${collection}/${topic}`
+  let entry = topics.get(key)
+  if (!entry) {
+    const fns = new Set<() => void>()
+    entry = { fns, unsub: pb.collection(collection).subscribe(topic, () => fns.forEach((f) => f())) }
+    entry.unsub.catch(() => {})
+    topics.set(key, entry)
+  }
+  const e = entry
+  e.fns.add(fn)
+  return () => {
+    e.fns.delete(fn)
+    if (e.fns.size || topics.get(key) !== e) return
+    topics.delete(key)
+    e.unsub.then((u) => u()).catch(() => {})
+  }
+}
+
 // ponytail: recarrega a consulta inteira a cada mudança na collection; trocar por merge incremental se as listas crescerem muito.
 /** Lista com atualização em tempo real (realtime do PocketBase). */
 export function useLiveList<T extends RecordModel>(collection: string, opts: { filter?: string; sort?: string; expand?: string } = {}): Live<T[]> {
@@ -17,10 +40,10 @@ export function useLiveList<T extends RecordModel>(collection: string, opts: { f
         .then((data) => alive && setState({ data, error: false }))
         .catch(() => alive && setState((s) => ({ ...s, error: true })))
     load()
-    const unsub = pb.collection(collection).subscribe('*', load)
+    const unlisten = listen(collection, '*', load)
     return () => {
       alive = false
-      unsub.then((u) => u()).catch(() => {})
+      unlisten()
     }
   }, [collection, filter, sort, expand])
 
@@ -38,10 +61,10 @@ export function useLiveRecord<T extends RecordModel>(collection: string, id: str
         .then((data) => alive && setState({ data, error: false }))
         .catch((err) => alive && setState(err?.status === 404 ? { data: null, error: false } : (s) => ({ ...s, error: true })))
     load()
-    const unsub = pb.collection(collection).subscribe(id, load)
+    const unlisten = listen(collection, id, load)
     return () => {
       alive = false
-      unsub.then((u) => u()).catch(() => {})
+      unlisten()
     }
   }, [collection, id, expand])
 
