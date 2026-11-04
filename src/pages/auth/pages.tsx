@@ -9,7 +9,7 @@ import { errorMessage, pb } from '@/lib/pb'
 import { phoneSchema } from '@/lib/phone'
 import { AuthCard } from './AuthLayout'
 
-const email = z.string().trim().email('E-mail inválido')
+const email = z.string().trim().toLowerCase().email('E-mail inválido')
 const password = z.string().min(8, 'Mínimo de 8 caracteres')
 const passwordPair = z
   .object({ password, passwordConfirm: z.string() })

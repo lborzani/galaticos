@@ -4,7 +4,7 @@ test('cadastro, bloqueio até confirmar o e-mail e login', async ({ page, api })
   const email = `cad${Date.now()}${test.info().parallelIndex}@test.local`
   await page.goto('/cadastro')
   await page.getByLabel('Nome').fill('Nova Jogadora')
-  await page.getByLabel('E-mail').fill(email)
+  await page.getByLabel('E-mail').fill(`  ${email.toUpperCase()} `)
   await page.getByLabel('Telefone').fill('11912345678')
   await expect(page.getByLabel('Telefone')).toHaveValue('(11) 91234-5678')
   await page.getByLabel('Senha', { exact: true }).fill('senha-e2e-123')
@@ -12,7 +12,7 @@ test('cadastro, bloqueio até confirmar o e-mail e login', async ({ page, api })
   await page.getByRole('button', { name: 'Criar conta' }).click()
   await expect(page.getByText('Conta criada!')).toBeVisible()
 
-  await page.getByLabel('E-mail').fill(email)
+  await page.getByLabel('E-mail').fill(email.toUpperCase())
   await page.getByLabel('Senha').fill('senha-e2e-123')
   await page.getByRole('button', { name: 'Entrar' }).click()
   await expect(page.getByRole('alert')).toContainText('ainda não confirmado')
@@ -23,6 +23,13 @@ test('cadastro, bloqueio até confirmar o e-mail e login', async ({ page, api })
 
   await page.getByRole('button', { name: 'Entrar' }).click()
   await expect(page.getByRole('heading', { name: 'Olá, Nova!' })).toBeVisible()
+})
+
+test('servidor grava o e-mail normalizado', async ({ api }) => {
+  const email = `norm${Date.now()}${test.info().parallelIndex}@test.local`
+  const password = 'senha-e2e-123'
+  const rec = await api.collection('users').create({ email: ` ${email.toUpperCase()} `, password, passwordConfirm: password, name: 'Normal', phone: '+5511987654321' })
+  expect(rec.email).toBe(email)
 })
 
 test('validação do cadastro em português', async ({ page }) => {

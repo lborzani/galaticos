@@ -23,6 +23,14 @@ onRecordUpdateRequest((e) => {
   e.next()
 }, "users")
 
+// E-mail sempre minúsculo e sem espaços, venha de onde vier (cadastro, troca de e-mail, painel /_/).
+const normalizeEmail = (e) => {
+  e.record.set("email", e.record.getString("email").trim().toLowerCase())
+  e.next()
+}
+onRecordCreate(normalizeEmail, "users")
+onRecordUpdate(normalizeEmail, "users")
+
 // Erro do `pattern` vem como `phonePrivate`; o app espera `phone`.
 onRecordValidate((e) => {
   try {
