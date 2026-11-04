@@ -30,7 +30,7 @@ test('admin publica post com foto e evento; membro vê ao vivo e curte', async (
   const post = member.getByRole('article').filter({ hasText: text })
   await expect(post).toBeVisible()
   await expect(post).toContainText('Admin Posts')
-  await expect(post.getByRole('img', { name: 'Foto do post' })).toBeVisible()
+  await expect(post.getByRole('img', { name: 'Foto do post' })).toHaveAttribute('src', /foto_1_\w+\.webp/) // recomprimida no navegador
   await expect(post.getByRole('link', { name: new RegExp(ev.title) })).toHaveAttribute('href', `/evento/${ev.id}`)
   await expect(post.getByRole('button', { name: 'Apagar post' })).toHaveCount(0)
 

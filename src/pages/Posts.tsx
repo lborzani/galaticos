@@ -1,6 +1,6 @@
 import { UserName } from '@/components/user-name'
 import { Heart, Plus, Trash2 } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { EventCard } from '@/components/events'
@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { formatDateTime, type GEvent, type Post, type PostLike } from '@/lib/events'
+import { shrinkImage } from '@/lib/image'
 import { useLiveList, useNow } from '@/lib/live'
 import { avatarUrl, errorMessage, initials, isAdmin, pb, useUser, type User } from '@/lib/pb'
 
@@ -120,18 +121,33 @@ function DeletePost({ onConfirm }: { onConfirm: () => void }) {
 }
 
 const MAX_IMAGES = 4
-const MAX_SIZE = 5 * 1024 * 1024
 const schema = z.object({
   body: z.string().trim().min(1, 'Escreva o texto do post').max(2000, 'Máximo de 2000 caracteres'),
-  images: z.array(z.instanceof(File)).max(MAX_IMAGES, `Máximo de ${MAX_IMAGES} fotos`)
-    .refine((fs) => fs.every((f) => f.size <= MAX_SIZE), 'Cada foto pode ter até 5 MB'),
+  images: z.array(z.instanceof(File)).max(MAX_IMAGES, `Máximo de ${MAX_IMAGES} fotos`),
 })
 
 function PostForm({ user, onDone }: { user: User; onDone: () => void }) {
   const [form, setForm] = useState({ body: '', images: [] as File[], event: 'none' })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [saving, setSaving] = useState(false)
+  const [processing, setProcessing] = useState(false)
   const { data: events } = useLiveList<GEvent>('events', { filter: "cancelledAt = ''", sort: '-eventDate' })
+
+  async function pickImages(e: ChangeEvent<HTMLInputElement>) {
+    const input = e.target
+    setProcessing(true)
+    try {
+      // abre em tela cheia ao tocar, por isso mais resolução que o avatar
+      const images = await Promise.all([...(input.files ?? [])].map((f, i) => shrinkImage(f, `foto-${i + 1}`, 1600)))
+      setForm((f) => ({ ...f, images }))
+    } catch {
+      input.value = ''
+      setForm((f) => ({ ...f, images: [] }))
+      toast.error('Não foi possível ler uma das imagens. Use JPG, PNG ou WebP.')
+    } finally {
+      setProcessing(false)
+    }
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -166,7 +182,7 @@ function PostForm({ user, onDone }: { user: User; onDone: () => void }) {
           <Field label={`Fotos (até ${MAX_IMAGES}, opcional)`} name="postImages" error={errors.images}>
             <input id="postImages" type="file" multiple accept="image/jpeg,image/png,image/webp"
               className="text-sm file:mr-3 file:rounded-md file:border file:bg-transparent file:px-3 file:py-1.5 file:text-foreground"
-              onChange={(e) => setForm({ ...form, images: [...(e.target.files ?? [])] })} />
+              disabled={processing} onChange={pickImages} />
           </Field>
           <Field label="Evento (opcional)" name="postEvent">
             <Select value={form.event} onValueChange={(event) => setForm({ ...form, event })}>
@@ -179,7 +195,7 @@ function PostForm({ user, onDone }: { user: User; onDone: () => void }) {
           </Field>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={onDone}>Cancelar</Button>
-            <Button type="submit" disabled={saving} className="flex-1">{saving ? 'Publicando…' : 'Publicar'}</Button>
+            <Button type="submit" disabled={saving || processing} className="flex-1">{saving ? 'Publicando…' : processing ? 'Preparando fotos…' : 'Publicar'}</Button>
           </div>
         </form>
       </CardContent>
