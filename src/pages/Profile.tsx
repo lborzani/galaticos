@@ -15,7 +15,11 @@ import { disablePush, enablePush, pushState, signOut, type PushState } from '@/l
 
 const NO_POSITION = 'none'
 
-const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50, 'Máximo de 50 caracteres'), phone: phoneSchema })
+const schema = z.object({
+  name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50, 'Máximo de 50 caracteres'),
+  nickname: z.string().trim().max(30, 'Máximo de 30 caracteres'),
+  phone: phoneSchema,
+})
 
 export default function Profile() {
   // remonta quando o registro muda (authRefresh, edição em outro aparelho): o formulário nunca salva dados velhos
@@ -34,7 +38,7 @@ function ProfileForm() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
-    const { data, errors } = validate(schema, { name: form.get('name'), phone: form.get('phone') })
+    const { data, errors } = validate(schema, { name: form.get('name'), nickname: form.get('nickname'), phone: form.get('phone') })
     setErrors(errors ?? {})
     if (!data) return
     setSaving(true)
@@ -42,6 +46,7 @@ function ProfileForm() {
       // update do próprio registro também atualiza pb.authStore
       await pb.collection('users').update<User>(user.id, {
         name: data.name,
+        nickname: data.nickname,
         phone: data.phone,
         position: position === NO_POSITION ? '' : position,
         availableForTeam: available,
@@ -81,6 +86,7 @@ function ProfileForm() {
             </div>
 
             <Field label="Nome" name="name" defaultValue={user.name} autoComplete="name" error={errors.name} />
+            <Field label="Apelido" name="nickname" defaultValue={user.nickname ?? ''} autoComplete="nickname" error={errors.nickname} />
             <Field label="E-mail" name="email" value={user.email ?? ''} disabled readOnly />
             <Field label="Rank" name="rank" value={RANK_LABELS[user.rank] ?? 'Regular'} disabled readOnly />
             <div className="grid gap-1">

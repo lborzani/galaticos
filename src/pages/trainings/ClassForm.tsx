@@ -1,3 +1,4 @@
+import { UserName, userSearchText } from '@/components/user-name'
 import { X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -167,7 +168,7 @@ function Students({ classId }: { classId: string }) {
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
   const taken = new Set(enrolled?.map((e) => e.student))
-  const matches = q ? (users ?? []).filter((u) => !taken.has(u.id) && u.name.toLowerCase().includes(q)).slice(0, 5) : []
+  const matches = q ? (users ?? []).filter((u) => !taken.has(u.id) && userSearchText(u).includes(q)).slice(0, 5) : []
 
   async function add(u: User) {
     try {
@@ -197,7 +198,7 @@ function Students({ classId }: { classId: string }) {
           <button key={u.id} type="button" onClick={() => add(u)} aria-label={`Matricular ${u.name}`}
             className="flex min-w-0 items-center gap-3 rounded-lg border border-dashed p-2 text-left hover:bg-muted">
             <Avatar className="size-8"><AvatarImage src={avatarUrl(u)} alt="" /><AvatarFallback>{initials(u.name)}</AvatarFallback></Avatar>
-            <span className="truncate text-sm">{u.name}</span>
+            <span className="truncate text-sm"><UserName user={u} /></span>
             <span className="ml-auto text-sm text-primary">Matricular</span>
           </button>
         ))}
@@ -206,7 +207,7 @@ function Students({ classId }: { classId: string }) {
         {enrolled?.map((e) => (
           <div key={e.id} className="flex min-w-0 items-center gap-3 rounded-lg border p-2">
             <Avatar className="size-8"><AvatarImage src={avatarUrl(e.expand?.student ?? null)} alt="" /><AvatarFallback>{initials(e.expand?.student?.name ?? '')}</AvatarFallback></Avatar>
-            <span className="truncate text-sm">{e.expand?.student?.name}</span>
+            <span className="truncate text-sm"><UserName user={e.expand?.student} /></span>
             <Button variant="ghost" size="icon" className="ml-auto" aria-label={`Tirar ${e.expand?.student?.name} da turma`} onClick={() => remove(e)}><X /></Button>
           </div>
         ))}

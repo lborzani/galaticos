@@ -1,3 +1,4 @@
+import { UserName } from '@/components/user-name'
 import { BarcodeDetector, setZXingModuleOverrides } from 'barcode-detector/ponyfill'
 import wasmUrl from 'zxing-wasm/reader/zxing_reader.wasm?url'
 import { CircleCheck, TriangleAlert } from 'lucide-react'
@@ -122,7 +123,7 @@ export default function Scanner() {
                 <AvatarFallback>{initials(state.data.user.name)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="truncate text-lg font-semibold">{state.data.user.name}</p>
+                <p className="truncate text-lg font-semibold"><UserName user={state.data.user} /></p>
                 {state.data.user.position && <p className="text-sm text-muted-foreground">{POSITION_LABELS[state.data.user.position]}</p>}
                 <p className="text-sm text-muted-foreground">{lookupLabel(state.data)}</p>
               </div>

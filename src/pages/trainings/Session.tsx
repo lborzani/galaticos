@@ -1,3 +1,4 @@
+import { UserName } from '@/components/user-name'
 import { CircleCheck, ScanLine } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
@@ -48,7 +49,7 @@ export default function Session() {
           {enrolled?.map((e) => (
             <div key={e.id} className="flex min-w-0 items-center gap-3 rounded-lg border p-2" role="group" aria-label={e.expand?.student?.name}>
               <Avatar className="size-8"><AvatarImage src={avatarUrl(e.expand?.student ?? null)} alt="" /><AvatarFallback>{initials(e.expand?.student?.name ?? '')}</AvatarFallback></Avatar>
-              <span className="truncate text-sm">{e.expand?.student?.name}</span>
+              <span className="truncate text-sm"><UserName user={e.expand?.student} /></span>
               {here.has(e.student)
                 ? <span className="ml-auto flex items-center gap-1 text-sm text-emerald-500"><CircleCheck className="size-4" /> Presente</span>
                 : <span className="ml-auto text-sm text-muted-foreground">—</span>}

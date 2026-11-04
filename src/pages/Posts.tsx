@@ -1,3 +1,4 @@
+import { UserName } from '@/components/user-name'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
@@ -72,7 +73,7 @@ function PostCard({ post, likeId, user, canDelete, now }: { post: Post; likeId?:
         <div className="flex items-center gap-3">
           <Avatar><AvatarImage src={avatarUrl(author ?? null)} alt="" /><AvatarFallback>{initials(author?.name ?? '')}</AvatarFallback></Avatar>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium">{author?.name}</p>
+            <p className="truncate font-medium"><UserName user={author} fallback="" /></p>
             <p className="text-xs text-muted-foreground">{formatDateTime(post.created)}</p>
           </div>
           {canDelete && <DeletePost onConfirm={remove} />}

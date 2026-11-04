@@ -1,3 +1,4 @@
+import { UserName } from '@/components/user-name'
 import { CircleCheck, Hourglass } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -129,7 +130,7 @@ function PlayerList({ title, regs, empty, numbered }: { title: string; regs: Reg
                   <Avatar size="sm"><AvatarImage src={avatarUrl(u ?? null)} alt="" /><AvatarFallback>{initials(u?.name ?? '?')}</AvatarFallback></Avatar>
                   <div className="grid min-w-0">
                     <span className="flex min-w-0 items-center gap-2 text-sm">
-                      <span className="truncate">{u?.name ?? 'Jogador'}{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
+                      <span className="truncate"><UserName user={u} />{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
                       <RankBadge rank={u?.rank} />
                     </span>
                     {/* o servidor só manda `phone` para admins (e o próprio dono) */}

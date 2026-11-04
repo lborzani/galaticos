@@ -34,6 +34,8 @@ export interface User extends RecordModel {
   /** E-mail confirmado (ou conta liberada pelo admin). */
   verified?: boolean
   name: string
+  /** Apelido opcional. */
+  nickname?: string
   /** +55…; só vem para o próprio usuário e para admins. */
   phone?: string
   avatar: string

@@ -1,3 +1,4 @@
+import { UserName, userSearchText } from '@/components/user-name'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { RankBadge } from '@/components/rank'
@@ -37,7 +38,7 @@ export default function Users() {
   const [query, setQuery] = useState('')
   const [banned, setBanned] = useState(false)
   const q = query.trim().toLowerCase()
-  const list = users?.filter((u) => !!u.bannedAt === banned && u.name.toLowerCase().includes(q))
+  const list = users?.filter((u) => !!u.bannedAt === banned && userSearchText(u).includes(q))
   const [openId, setOpenId] = useState<string | null>(null)
   const selected = users?.find((u) => u.id === openId)
 
@@ -45,7 +46,7 @@ export default function Users() {
     <div className="grid gap-6">
       <h1 className="text-2xl font-bold">Usuários</h1>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-        <Input type="search" placeholder="Buscar por nome" aria-label="Buscar usuário" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Input type="search" placeholder="Buscar por nome ou apelido" aria-label="Buscar usuário" value={query} onChange={(e) => setQuery(e.target.value)} />
         <div className="flex gap-2" role="group" aria-label="Filtro">
           <Button variant={banned ? 'outline' : 'default'} aria-pressed={!banned} onClick={() => setBanned(false)}>Ativos</Button>
           <Button variant={banned ? 'default' : 'outline'} aria-pressed={banned} onClick={() => setBanned(true)}>Banidos</Button>
@@ -67,7 +68,7 @@ export default function Users() {
 function UserHeading({ user, self }: { user: User; self: boolean }) {
   return (
     <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium">
-      <span className="truncate">{user.name}{self && <span className="text-muted-foreground"> (você)</span>}</span>
+      <span className="truncate"><UserName user={user} />{self && <span className="text-muted-foreground"> (você)</span>}</span>
       <RankBadge rank={user.rank} />
       {(user.role === 'admin' || user.role === 'professor') && <Badge variant="secondary">{ROLE_LABELS[user.role]}</Badge>}
     </span>
