@@ -48,4 +48,24 @@ describe('events', () => {
     const ev = await adm.collection('events').create(eventData(uid))
     await expect(adm.collection('events').delete(ev.id)).rejects.toThrow()
   })
+
+  it('série recorrente: admin cria em lote, tudo ou nada; membro não', async () => {
+    const adm = await member('Admin', 'admin')
+    const uid = adm.authStore.record!.id
+    const title = `Série ${crypto.randomUUID()}`
+    const batch = adm.createBatch()
+    for (const w of [0, 2, 4]) batch.collection('events').create(eventData(uid, { title, eventDate: inHours(48 + w * 168) }))
+    expect(await batch.send()).toHaveLength(3)
+
+    const bad = adm.createBatch()
+    bad.collection('events').create(eventData(uid, { title: `${title} bad` }))
+    bad.collection('events').create(eventData(uid, { title: `${title} bad`, registrationOpensAt: inHours(999) }))
+    await expect(bad.send()).rejects.toThrow()
+    expect(await adm.collection('events').getFullList({ filter: `title ~ "${title}"` })).toHaveLength(3)
+
+    const pb = await member()
+    const mb = pb.createBatch()
+    mb.collection('events').create(eventData(pb.authStore.record!.id))
+    await expect(mb.send()).rejects.toThrow()
+  })
 })

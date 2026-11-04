@@ -26,9 +26,20 @@ const schema = z
 
 type Form = {
   template: string; kind: string; teams: boolean; title: string; eventDate: string; registrationOpensAt: string; court: string
-  maxParticipants: string; allowedRanks: Rank[]
+  maxParticipants: string; allowedRanks: Rank[]; repeatDays: string; times: string
 }
-const EMPTY: Form = { template: '', kind: '', teams: false, title: '', eventDate: '', registrationOpensAt: '', court: '', maxParticipants: '', allowedRanks: [] }
+const EMPTY: Form = {
+  template: '', kind: '', teams: false, title: '', eventDate: '', registrationOpensAt: '', court: '', maxParticipants: '', allowedRanks: [],
+  repeatDays: '0', times: '4',
+}
+const MAX_TIMES = 12
+
+/** Valor de datetime-local + `days` dias, mesmo horário de relógio (Date local cuida do calendário). */
+function shiftDays(local: string, days: number) {
+  const d = new Date(local)
+  d.setDate(d.getDate() + days)
+  return d.toISOString()
+}
 
 export default function EventForm() {
   const { id } = useParams()
@@ -52,6 +63,7 @@ export default function EventForm() {
         court: ev.court,
         maxParticipants: String(ev.maxParticipants),
         allowedRanks: ev.allowedRanks ?? [],
+        repeatDays: '0', times: '',
       })
       setLoaded(true)
     }, () => toast.error('Evento não encontrado'))
@@ -78,7 +90,13 @@ export default function EventForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     const { data, errors } = validate(schema, form)
-    const all = { ...errors, ...(!id && !form.template && { template: 'Selecione o template' }) }
+    const repeatDays = id ? 0 : Number(form.repeatDays)
+    const times = repeatDays ? Number(form.times) : 1
+    const all = {
+      ...errors,
+      ...(!id && !form.template && { template: 'Selecione o template' }),
+      ...(repeatDays > 0 && !(Number.isInteger(times) && times >= 2 && times <= MAX_TIMES) && { times: `De 2 a ${MAX_TIMES} vezes` }),
+    }
     setErrors(all)
     if (!data || Object.keys(all).length) return
 
@@ -92,6 +110,21 @@ export default function EventForm() {
     }
     setSaving(true)
     try {
+      if (times > 1) {
+        // série: cada ocorrência vira um evento independente, criadas num lote só (tudo ou nada)
+        const batch = pb.createBatch()
+        for (let i = 0; i < times; i++) {
+          batch.collection('events').create({
+            ...payload, kind: form.kind, teams: form.teams, createdBy: user.id,
+            eventDate: shiftDays(data.eventDate, i * repeatDays),
+            registrationOpensAt: shiftDays(data.registrationOpensAt, i * repeatDays),
+          })
+        }
+        await batch.send()
+        toast.success(`${times} eventos criados`)
+        navigate('/', { replace: true })
+        return
+      }
       const saved = id
         ? await pb.collection('events').update(id, payload)
         : await pb.collection('events').create({ ...payload, kind: form.kind, teams: form.teams, createdBy: user.id })
@@ -149,6 +182,24 @@ export default function EventForm() {
           <Field label="Vagas" name="maxParticipants" type="number" inputMode="numeric" min={1} value={form.maxParticipants}
             onChange={(e) => set({ maxParticipants: e.target.value })} error={errors.maxParticipants} />
           <RanksField value={form.allowedRanks} onChange={(allowedRanks) => set({ allowedRanks })} />
+          {!id && (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Repetir" name="repeatDays">
+                <Select value={form.repeatDays} onValueChange={(v) => set({ repeatDays: v })}>
+                  <SelectTrigger id="repeatDays" className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Não repete</SelectItem>
+                    <SelectItem value="7">Toda semana</SelectItem>
+                    <SelectItem value="14">A cada 2 semanas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              {form.repeatDays !== '0' && (
+                <Field label="Quantas vezes" name="times" type="number" inputMode="numeric" min={2} max={MAX_TIMES} value={form.times}
+                  onChange={(e) => set({ times: e.target.value })} error={errors.times} />
+              )}
+            </div>
+          )}
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
             <Button type="submit" disabled={saving} className="flex-1">{saving ? 'Salvando…' : 'Salvar'}</Button>

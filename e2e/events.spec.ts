@@ -133,3 +133,33 @@ test('membro não vê nem acessa ações de admin', async ({ page, makeUser, mak
     await expect(page).toHaveURL(/\/$/)
   }
 })
+
+test('admin cria série a cada 2 semanas', async ({ page, makeUser, api }) => {
+  const title = `Prime 4fun ${Date.now()}${test.info().parallelIndex}`
+  const court = await api.collection('courts').create({ name: `Quadra S ${Date.now()}${test.info().parallelIndex}` })
+  await loginAs(page, await makeUser({ role: 'admin' }))
+  await page.goto('/admin/eventos/novo')
+  await page.getByRole('combobox', { name: 'Template' }).click()
+  await page.getByRole('option', { name: 'Bate-bola Domingo' }).click()
+  await page.getByLabel('Título').fill(title)
+  await page.getByLabel('Data e hora do evento').fill(localInput(24))
+  await page.getByLabel('Lista abre em').fill(localInput(-1))
+  await page.getByRole('combobox', { name: 'Quadra' }).click()
+  await page.getByRole('option', { name: court.name }).click()
+  await expect(page.getByLabel('Quantas vezes')).toHaveCount(0)
+  await page.getByRole('combobox', { name: 'Repetir' }).click()
+  await page.getByRole('option', { name: 'A cada 2 semanas' }).click()
+  await page.getByLabel('Quantas vezes').fill('13')
+  await page.getByRole('button', { name: 'Salvar' }).click()
+  await expect(page.getByText('De 2 a 12 vezes')).toBeVisible()
+  await page.getByLabel('Quantas vezes').fill('3')
+  await page.getByRole('button', { name: 'Salvar' }).click()
+  await expect(page.getByText('3 eventos criados')).toBeVisible()
+  await expect(page).toHaveURL(/\/$/)
+
+  const evs = await api.collection('events').getFullList({ filter: `title = "${title}"`, sort: 'eventDate' })
+  const at = (s: string) => new Date(s.replace(' ', 'T')).getTime()
+  const DAY = 86400_000
+  expect(evs.map((e) => (at(e.eventDate) - at(evs[0].eventDate)) / DAY)).toEqual([0, 14, 28])
+  expect(evs.map((e) => (at(e.eventDate) - at(e.registrationOpensAt)) / 3600_000)).toEqual([25, 25, 25])
+})
