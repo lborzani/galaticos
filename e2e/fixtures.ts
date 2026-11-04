@@ -49,6 +49,7 @@ export async function loginAs(page: Page, user: TestUser) {
   await page.addInitScript((auth) => {
     if (!sessionStorage.getItem('e2e_seeded')) {
       localStorage.setItem('pocketbase_auth', auth)
+      localStorage.setItem('galaticos:convite-app', String(Date.now())) // convite de instalar/notificações fica de fora
       sessionStorage.setItem('e2e_seeded', '1')
     }
   }, JSON.stringify({ token, record }))

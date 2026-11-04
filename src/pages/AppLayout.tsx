@@ -3,6 +3,7 @@ import { lazy, Suspense, useSyncExternalStore } from 'react'
 import { Navigate, NavLink, Outlet } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
+import { InstallInvite } from '@/components/install-invite'
 import { Tribute } from '@/components/tribute'
 import { cn } from '@/lib/utils'
 import type { Invite } from '@/lib/events'
@@ -59,6 +60,7 @@ function Shell({ user }: { user: User }) {
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 py-6 pb-28 md:pb-10 lg:max-w-6xl lg:px-8 lg:pt-8">
+        <InstallInvite />
         <Outlet />
       </main>
 

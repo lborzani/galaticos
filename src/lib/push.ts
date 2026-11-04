@@ -2,8 +2,8 @@ import { pb } from './pb'
 
 export type PushState = 'unsupported' | 'ios-install' | 'denied' | 'off' | 'on'
 
-const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-const standalone = () => window.matchMedia('(display-mode: standalone)').matches
+export const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+export const standalone = () => window.matchMedia('(display-mode: standalone)').matches
 
 async function registration() {
   return navigator.serviceWorker?.getRegistration()

@@ -36,3 +36,21 @@ test('com o service worker ativo, o painel do PocketBase não cai no fallback do
   await expect(page.locator('#root')).toHaveCount(0) // #root é o app; o painel tem outra página
   expect(await (await page.request.get('/api/health')).json()).toMatchObject({ code: 200 })
 })
+
+test('convida a ativar notificações ao abrir; "Agora não" esconde por uma semana', async ({ page, makeUser }) => {
+  // o Chromium headless sempre diz "denied" (nem grantPermissions muda): finge um navegador que ainda não perguntou
+  await page.addInitScript(() => Object.defineProperty(Notification, 'permission', { get: () => 'default' }))
+  await loginAs(page, await makeUser())
+  await page.goto('/')
+  await page.evaluate(() => localStorage.removeItem('galaticos:convite-app')) // loginAs adia o convite para os outros testes
+  await page.reload()
+
+  await expect(page.getByText('Galáticos no seu celular')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Ativar notificações' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Agora não' }).click()
+  await expect(page.getByText('Galáticos no seu celular')).toBeHidden()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: /^Olá/ })).toBeVisible()
+  await expect(page.getByText('Galáticos no seu celular')).toBeHidden()
+})
