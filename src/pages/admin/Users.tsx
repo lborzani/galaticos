@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { RankBadge } from '@/components/rank'
 import {
@@ -8,14 +8,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { formatDateTime } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
-import { avatarUrl, initials, pb, RANK_LABELS, serverMessage, useUser, type Rank, type User } from '@/lib/pb'
+import { avatarUrl, initials, pb, POSITION_LABELS, RANK_LABELS, serverMessage, useUser, type Rank, type User } from '@/lib/pb'
 import { formatPhone } from '@/lib/phone'
 
 const ROLE_LABELS = { member: 'Membro', professor: 'Professor', admin: 'Admin' }
@@ -38,6 +38,8 @@ export default function Users() {
   const [banned, setBanned] = useState(false)
   const q = query.trim().toLowerCase()
   const list = users?.filter((u) => !!u.bannedAt === banned && u.name.toLowerCase().includes(q))
+  const [openId, setOpenId] = useState<string | null>(null)
+  const selected = users?.find((u) => u.id === openId)
 
   return (
     <div className="grid gap-6">
@@ -52,65 +54,107 @@ export default function Users() {
       {error && <p className="text-destructive" role="alert">Não foi possível carregar os usuários.</p>}
       {!list ? <p className="text-muted-foreground">Carregando…</p>
         : list.length === 0 ? <p className="text-muted-foreground">Ninguém aqui.</p>
-        : list.map((u) => <UserCard key={u.id} user={u} self={u.id === me} />)}
+        : <div className="grid gap-2">{list.map((u) => <UserRow key={u.id} user={u} self={u.id === me} onOpen={() => setOpenId(u.id)} />)}</div>}
+
+      {/* busca no `users` (não no `list`): o modal continua aberto e atualizado mesmo se o usuário mudar de filtro (ex.: banido) */}
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setOpenId(null)}>
+        {selected && <UserDialog user={selected} self={selected.id === me} />}
+      </Dialog>
     </div>
   )
 }
 
-function UserCard({ user, self }: { user: User; self: boolean }) {
+function UserHeading({ user, self }: { user: User; self: boolean }) {
   return (
-    <Card role="group" aria-label={user.name}>
-      <CardContent className="grid gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <Avatar><AvatarImage src={avatarUrl(user)} alt="" /><AvatarFallback>{initials(user.name)}</AvatarFallback></Avatar>
-          <div className="grid min-w-0">
-            <p className="flex min-w-0 items-center gap-2 font-medium">
-              <span className="truncate">{user.name}{self && <span className="text-muted-foreground"> (você)</span>}</span>
-              <RankBadge rank={user.rank} />
-              {(user.role === 'admin' || user.role === 'professor') && <Badge variant="secondary">{ROLE_LABELS[user.role]}</Badge>}
-            </p>
-            <p className="text-sm text-muted-foreground">{user.phone ? formatPhone(user.phone) : 'Sem telefone'}</p>
-          </div>
+    <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium">
+      <span className="truncate">{user.name}{self && <span className="text-muted-foreground"> (você)</span>}</span>
+      <RankBadge rank={user.rank} />
+      {(user.role === 'admin' || user.role === 'professor') && <Badge variant="secondary">{ROLE_LABELS[user.role]}</Badge>}
+    </span>
+  )
+}
+
+function UserRow({ user, self, onOpen }: { user: User; self: boolean; onOpen: () => void }) {
+  return (
+    <button type="button" onClick={onOpen}
+      className="flex min-w-0 items-center gap-3 rounded-xl bg-card p-3 text-left ring-1 ring-foreground/10 transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+      <Avatar><AvatarImage src={avatarUrl(user)} alt="" /><AvatarFallback>{initials(user.name)}</AvatarFallback></Avatar>
+      <span className="grid min-w-0">
+        <UserHeading user={user} self={self} />
+        <span className="truncate text-sm text-muted-foreground">
+          {user.bannedAt ? `Banido: ${user.banReason}` : user.phone ? formatPhone(user.phone) : 'Sem telefone'}
+          {!user.verified && <span className="text-amber-500"> · e-mail não confirmado</span>}
+        </span>
+      </span>
+    </button>
+  )
+}
+
+function Info({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[8rem_1fr] gap-2">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 break-words">{children}</dd>
+    </div>
+  )
+}
+
+function UserDialog({ user, self }: { user: User; self: boolean }) {
+  return (
+    <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
+      <DialogHeader>
+        <div className="flex min-w-0 items-center gap-3 pr-8">
+          <Avatar className="size-14"><AvatarImage src={avatarUrl(user)} alt="" /><AvatarFallback>{initials(user.name)}</AvatarFallback></Avatar>
+          <DialogTitle className="min-w-0"><UserHeading user={user} self={self} /></DialogTitle>
         </div>
+        <DialogDescription className="sr-only">Dados e ações de admin sobre {user.name}</DialogDescription>
+      </DialogHeader>
 
-        {!user.verified && (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/40 p-3">
-            <p className="text-sm text-amber-500">E-mail não confirmado: ainda não consegue entrar.</p>
-            <Button size="sm" variant="outline" onClick={() => adminCall(user.id, { verified: true }, `Conta de ${user.name} liberada`)}>Liberar conta</Button>
-          </div>
-        )}
+      <dl className="grid gap-2">
+        {user.email && <Info label="E-mail">{user.email}</Info>}
+        <Info label="Telefone">{user.phone ? formatPhone(user.phone) : 'Sem telefone'}</Info>
+        <Info label="Posição">{user.position ? POSITION_LABELS[user.position] : '—'}</Info>
+        <Info label="Disponível p/ time">{user.availableForTeam ? 'Sim' : 'Não'}</Info>
+        <Info label="Cadastro">{formatDateTime(user.created)}</Info>
+      </dl>
 
-        {user.bannedAt ? (
-          <div className="grid gap-3">
-            <p className="text-sm"><span className="text-muted-foreground">Banido em {formatDateTime(user.bannedAt)}:</span> {user.banReason}</p>
-            <Button variant="outline" onClick={() => adminCall(`${user.id}/unban`, undefined, `${user.name} desbanido`)}>Desbanir</Button>
+      {!user.verified && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/40 p-3">
+          <p className="text-sm text-amber-500">E-mail não confirmado: ainda não consegue entrar.</p>
+          <Button size="sm" variant="outline" onClick={() => adminCall(user.id, { verified: true }, `Conta de ${user.name} liberada`)}>Liberar conta</Button>
+        </div>
+      )}
+
+      {user.bannedAt ? (
+        <div className="grid gap-3">
+          <p className="text-sm"><span className="text-muted-foreground">Banido em {formatDateTime(user.bannedAt)}:</span> {user.banReason}</p>
+          <Button variant="outline" onClick={() => adminCall(`${user.id}/unban`, undefined, `${user.name} desbanido`)}>Desbanir</Button>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor={`rank-${user.id}`}>Rank</Label>
+            <Select value={user.rank || 'regular'} onValueChange={(rank) => adminCall(user.id, { rank }, `Rank de ${user.name}: ${RANK_LABELS[rank as Rank]}`)}>
+              <SelectTrigger id={`rank-${user.id}`} className="w-full" aria-label={`Rank de ${user.name}`}><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.entries(RANK_LABELS)).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-            <div className="grid gap-2">
-              <Label htmlFor={`rank-${user.id}`}>Rank</Label>
-              <Select value={user.rank || 'regular'} onValueChange={(rank) => adminCall(user.id, { rank }, `Rank de ${user.name}: ${RANK_LABELS[rank as Rank]}`)}>
-                <SelectTrigger id={`rank-${user.id}`} className="w-full" aria-label={`Rank de ${user.name}`}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.entries(RANK_LABELS)).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor={`role-${user.id}`}>Papel</Label>
-              <Select value={user.role || 'member'} disabled={self}
-                onValueChange={(role) => adminCall(user.id, { role }, `${user.name} agora é ${ROLE_LABELS[role as keyof typeof ROLE_LABELS].toLowerCase()}`)}>
-                <SelectTrigger id={`role-${user.id}`} className="w-full" aria-label={`Papel de ${user.name}`}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ROLE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {!self && <BanButton user={user} />}
+          <div className="grid gap-2">
+            <Label htmlFor={`role-${user.id}`}>Papel</Label>
+            <Select value={user.role || 'member'} disabled={self}
+              onValueChange={(role) => adminCall(user.id, { role }, `${user.name} agora é ${ROLE_LABELS[role as keyof typeof ROLE_LABELS].toLowerCase()}`)}>
+              <SelectTrigger id={`role-${user.id}`} className="w-full" aria-label={`Papel de ${user.name}`}><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(ROLE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          {!self && <div className="sm:col-span-2"><BanButton user={user} /></div>}
+        </div>
+      )}
+    </DialogContent>
   )
 }
 
@@ -118,7 +162,7 @@ function BanButton({ user }: { user: User }) {
   const [reason, setReason] = useState('')
   return (
     <AlertDialog onOpenChange={(open) => open && setReason('')}>
-      <AlertDialogTrigger asChild><Button variant="destructive">Banir</Button></AlertDialogTrigger>
+      <AlertDialogTrigger asChild><Button variant="destructive" className="w-full">Banir</Button></AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Banir {user.name}?</AlertDialogTitle>
