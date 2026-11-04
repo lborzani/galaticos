@@ -33,10 +33,11 @@ function register(txApp, eventId, userId) {
   if (event.getString("cancelledAt")) throw new BadRequestError("Esse evento foi cancelado.")
   if (nowUnix() < event.getDateTime("registrationOpensAt").unix()) throw new BadRequestError("A lista ainda não abriu.")
   if (nowUnix() >= event.getDateTime("eventDate").unix()) throw new BadRequestError("O evento já começou.")
+  require(`${__hooks}/lib/ranks.js`).assertRankAllowed(event, txApp.findRecordById("users", userId), "Você")
 
-  let reg = findOptional(txApp, "registrations", "event = {:e} && user = {:u}", { e: eventId, u: userId })
+  let reg =findOptional(txApp, "registrations", "event = {:e} && user = {:u}", { e: eventId, u: userId })
   if (reg && ACTIVE.includes(reg.getString("status"))) throw new BadRequestError("Você já está na lista.")
-  if (event.getString("type") === "prime" &&
+  if (event.getBool("teams") &&
       findOptional(txApp, "invites", "event = {:e} && player = {:u} && (status = 'pending' || status = 'accepted')", { e: eventId, u: userId })) {
     throw new BadRequestError("Você já foi convidado para um time deste evento.")
   }
@@ -71,7 +72,7 @@ function cancel(txApp, eventId, userId) {
 
   reg.set("status", "cancelled")
   txApp.save(reg)
-  if (status === "confirmed" && event.getString("type") === "prime") {
+  if (status === "confirmed" && event.getBool("teams")) {
     require(`${__hooks}/lib/invites.js`).releaseTeam(txApp, eventId, userId)
   }
   bump(event, status === "confirmed" ? "confirmedCount" : "waitlistCount", -1)

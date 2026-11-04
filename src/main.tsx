@@ -35,6 +35,7 @@ const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { path: '/', element: <Home /> },
+      { path: '/posts', lazy: page(() => import('@/pages/Posts')) },
       { path: '/perfil', lazy: page(() => import('@/pages/Profile')) },
       { element: <MobileOnly />, children: [{ path: '/passaporte', lazy: page(() => import('@/pages/Passport')) }] },
       { path: '/convites', lazy: page(() => import('@/pages/Inbox')) },
@@ -42,7 +43,9 @@ const router = createBrowserRouter([
       {
         element: <RequireAdmin />,
         children: [
-          { element: <MobileOnly />, children: [{ path: '/admin', lazy: page(() => import('@/pages/admin/Scanner')) }] },
+          { path: '/admin', lazy: page(() => import('@/pages/admin/Panel')) },
+          { path: '/admin/usuarios', lazy: page(() => import('@/pages/admin/Users')) },
+          { element: <MobileOnly />, children: [{ path: '/admin/validar', lazy: page(() => import('@/pages/admin/Scanner')) }] },
           { path: '/admin/eventos/novo', lazy: page(() => import('@/pages/admin/EventForm')) },
           { path: '/admin/eventos/:id/editar', lazy: page(() => import('@/pages/admin/EventForm')) },
         ],

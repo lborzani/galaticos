@@ -2,7 +2,7 @@ import { CircleCheck } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Link } from 'react-router'
 import { Card, CardContent } from '@/components/ui/card'
-import { deriveStatus, formatDateTime, isPast, type GEvent, type Registration } from '@/lib/events'
+import { courtName, deriveStatus, formatDateTime, isPast, type GEvent, type Registration } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
 import { pb, useUser } from '@/lib/pb'
 
@@ -14,7 +14,7 @@ export default function Passport() {
   const { data, error } = useLiveList<WithPassport>('registrations', {
     filter: pb.filter('user = {:u} && (status = "confirmed" || status = "attended")', { u: user.id }),
     sort: 'event.eventDate',
-    expand: 'event,passports_via_registration',
+    expand: 'event,event.court,passports_via_registration',
   })
 
   const active = data?.filter((r) => r.expand?.event && !isPast(deriveStatus(r.expand.event)))
@@ -35,7 +35,7 @@ export default function Passport() {
             <CardContent className="grid justify-items-center gap-4 text-center">
               <div>
                 <Link to={`/evento/${ev.id}`} className="font-semibold hover:underline">{ev.title}</Link>
-                <p className="text-sm text-muted-foreground">{formatDateTime(ev.eventDate)} · {ev.location}</p>
+                <p className="text-sm text-muted-foreground">{formatDateTime(ev.eventDate)} · {courtName(ev)}</p>
               </div>
               {r.status === 'attended' ? (
                 <p className="flex items-center gap-2 py-8 font-medium text-emerald-500"><CircleCheck className="size-6" /> Presença confirmada</p>

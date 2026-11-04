@@ -3,8 +3,10 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { Field, validate, type FieldErrors } from '@/components/form'
+import { Field, PhoneField, validate, type FieldErrors } from '@/components/form'
+import { ClientResponseError } from 'pocketbase'
 import { errorMessage, pb } from '@/lib/pb'
+import { phoneSchema } from '@/lib/phone'
 import { AuthCard } from './AuthLayout'
 
 const email = z.string().trim().email('E-mail inválido')
@@ -32,8 +34,10 @@ export function Login() {
       await pb.collection('users').authWithPassword(data.email, data.password)
       navigate('/', { replace: true })
     } catch (err) {
-      setFailedEmail(data.email)
-      setErrors({ form: errorMessage(err, 'E-mail ou senha incorretos, ou e-mail ainda não confirmado.') })
+      // conta suspensa (pb_hooks/admin_users.pb.js); e-mail não confirmado também dá 403, por isso olha a mensagem
+      const suspended = err instanceof ClientResponseError && err.status === 403 && err.response.message?.startsWith('Conta suspensa')
+      setFailedEmail(suspended ? undefined : data.email)
+      setErrors({ form: suspended ? err.response.message : errorMessage(err, 'E-mail ou senha incorretos, ou e-mail ainda não confirmado.') })
     } finally {
       setLoading(false)
     }
@@ -56,9 +60,11 @@ export function Login() {
         {errors.form && (
           <div className="grid gap-2 text-sm" role="alert">
             <p className="text-destructive">{errors.form}</p>
-            <Button type="button" variant="link" className="h-auto justify-start p-0" onClick={resend}>
-              Reenviar e-mail de confirmação
-            </Button>
+            {failedEmail && (
+              <Button type="button" variant="link" className="h-auto justify-start p-0" onClick={resend}>
+                Reenviar e-mail de confirmação
+              </Button>
+            )}
           </div>
         )}
         <Button type="submit" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</Button>
@@ -78,7 +84,7 @@ export function Register() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50), email }).and(passwordPair)
+    const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50), email, phone: phoneSchema }).and(passwordPair)
     const { data, errors } = validate(schema, formData(e))
     setErrors(errors ?? {})
     if (!data) return
@@ -99,6 +105,7 @@ export function Register() {
       <form onSubmit={onSubmit} className="grid gap-4" noValidate>
         <Field label="Nome" name="name" autoComplete="name" error={errors.name} />
         <Field label="E-mail" name="email" type="email" autoComplete="email" error={errors.email} />
+        <PhoneField error={errors.phone} />
         <Field label="Senha" name="password" type="password" autoComplete="new-password" error={errors.password} />
         <Field label="Confirmar senha" name="passwordConfirm" type="password" autoComplete="new-password" error={errors.passwordConfirm} />
         {errors.form && <p className="text-sm text-destructive" role="alert">{errors.form}</p>}

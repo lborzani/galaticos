@@ -16,7 +16,7 @@ function openPrimeEvent(txApp, eventId) {
   } catch (_) {
     throw new NotFoundError("Evento não encontrado.")
   }
-  if (event.getString("type") !== "prime") throw new BadRequestError("Convites são só para eventos Prime.")
+  if (!event.getBool("teams")) throw new BadRequestError("Convites são só para eventos com times.")
   if (event.getString("cancelledAt")) throw new BadRequestError("Esse evento foi cancelado.")
   if (Math.floor(Date.now() / 1000) >= event.getDateTime("eventDate").unix()) throw new BadRequestError("O evento já começou.")
   return event
@@ -26,7 +26,7 @@ const isCaptain = (txApp, eventId, userId) =>
   exists(txApp, "registrations", `event = {:e} && user = {:u} && ${CAPTAIN_REG}`, { e: eventId, u: userId })
 
 function send(txApp, eventId, captainId, playerId) {
-  openPrimeEvent(txApp, eventId)
+  const event = openPrimeEvent(txApp, eventId)
   if (!isCaptain(txApp, eventId, captainId)) throw new ForbiddenError("Só capitães confirmados convidam.")
   if (playerId === captainId) throw new BadRequestError("Você já é o capitão do time.")
 
@@ -37,6 +37,7 @@ function send(txApp, eventId, captainId, playerId) {
     throw new NotFoundError("Jogador não encontrado.")
   }
   if (!player.getBool("availableForTeam")) throw new BadRequestError(`${player.getString("name")} não está disponível para times.`)
+  require(`${__hooks}/lib/ranks.js`).assertRankAllowed(event, player, player.getString("name"))
   if (isCaptain(txApp, eventId, playerId)) throw new BadRequestError(`${player.getString("name")} é capitão de outro time.`)
   if (exists(txApp, "invites", `event = {:e} && player = {:p} && ${ACTIVE_INVITE}`, { e: eventId, p: playerId })) {
     throw new BadRequestError(`${player.getString("name")} já tem convite para este evento.`)

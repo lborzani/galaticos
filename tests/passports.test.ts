@@ -6,7 +6,7 @@ const post = (pb: PocketBase, path: string, body?: object) => pb.send(path, { me
 
 async function setup(max = 1) {
   const adm = await member('Admin', 'admin')
-  const ev = await adm.collection('events').create(eventData(adm.authStore.record!.id, { type: 'custom', maxParticipants: max }))
+  const ev = await adm.collection('events').create(eventData(adm.authStore.record!.id, { maxParticipants: max }))
   const p = await member('Jogadora')
   const reg = await post(p, `/api/g/events/${ev.id}/register`)
   const passport = await p.collection('passports').getFirstListItem(`registration = "${reg.id}"`)

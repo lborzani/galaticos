@@ -13,8 +13,12 @@ function notify(app, userIds, payload) {
 
   const params = {}
   const filter = ids.map((id, i) => { params["u" + i] = id; return `user = {:u${i}}` }).join(" || ")
-  const subs = app.findRecordsByFilter("push_subscriptions", filter, "", 0, 0, params)
-  if (subs.length === 0) return
+  deliver(app, app.findRecordsByFilter("push_subscriptions", filter, "", 0, 0, params), payload)
+}
+
+function deliver(app, subs, payload) {
+  const url = $os.getenv("PUSH_URL")
+  if (!url || subs.length === 0) return
 
   try {
     const res = $http.send({
@@ -78,9 +82,10 @@ function runReminders(app) {
 
   const send = (event, which) => {
     const title = event.getString("title")
+    const court = app.findRecordById("courts", event.getString("court")).getString("name")
     notify(app, audience(app, event.id, false), which === "5m"
       ? { title: "Já está começando!", body: `${title} começa em 5 minutos!`, url: eventUrl(event), tag: "reminder-" + event.id }
-      : { title: "Falta 1 hora!", body: `${title} começa em 1 hora, em ${event.getString("location")}.`, url: eventUrl(event), tag: "reminder-" + event.id })
+      : { title: "Falta 1 hora!", body: `${title} começa em 1 hora, em ${court}.`, url: eventUrl(event), tag: "reminder-" + event.id })
     sent.push({ event: event.id, which })
   }
 
@@ -102,4 +107,15 @@ function runReminders(app) {
   return sent
 }
 
-module.exports = { notify, eventCancelled, promoted, runReminders }
+/** Post novo do mural: todos os aparelhos, menos os de quem publicou. */
+function newPost(app, post) {
+  const text = post.getString("body")
+  deliver(app, app.findRecordsByFilter("push_subscriptions", "user != {:a}", "", 0, 0, { a: post.getString("author") }), {
+    title: "Novo post",
+    body: text.length > 120 ? text.slice(0, 117) + "…" : text,
+    url: "/posts",
+    tag: "post-" + post.id,
+  })
+}
+
+module.exports = { notify, eventCancelled, promoted, runReminders, newPost }

@@ -1,5 +1,5 @@
-import { House, Mail, ScanLine, Smartphone, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
-import { useSyncExternalStore } from 'react'
+import { House, Mail, Newspaper, ShieldCheck, Smartphone, Ticket, User as UserIcon, type LucideIcon } from 'lucide-react'
+import { lazy, Suspense, useSyncExternalStore } from 'react'
 import { Navigate, NavLink, Outlet } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,6 +8,8 @@ import type { Invite } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
 import { avatarUrl, initials, isAdmin, pb, useUser, type User } from '@/lib/pb'
 
+const PhoneGate = lazy(() => import('./PhoneGate'))
+
 /** mobileOnly: QR e câmera não fazem sentido no computador, some da barra lateral a partir de lg. */
 type Item = { to: string; label: string; icon: LucideIcon; end?: boolean; count?: number; mobileOnly?: boolean }
 
@@ -15,6 +17,7 @@ type Item = { to: string; label: string; icon: LucideIcon; end?: boolean; count?
 export function AppLayout() {
   const user = useUser()
   if (!user) return <Navigate to="/entrar" replace />
+  if (!user.phone) return <Suspense><PhoneGate user={user} /></Suspense>
   return <Shell user={user} />
 }
 
@@ -23,9 +26,10 @@ function Shell({ user }: { user: User }) {
 
   const items: Item[] = [
     { to: '/', label: 'Início', icon: House, end: true },
+    { to: '/posts', label: 'Posts', icon: Newspaper },
     { to: '/passaporte', label: 'Passaporte', icon: Ticket, mobileOnly: true },
     { to: '/convites', label: 'Convites', icon: Mail, count: pending?.length },
-    ...(isAdmin(user) ? [{ to: '/admin', label: 'Validar', icon: ScanLine, end: true, mobileOnly: true }] : []),
+    ...(isAdmin(user) ? [{ to: '/admin', label: 'Admin', icon: ShieldCheck }] : []),
     { to: '/perfil', label: 'Perfil', icon: UserIcon },
   ]
 

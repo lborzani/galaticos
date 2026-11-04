@@ -12,7 +12,9 @@ import { formatDateTime, type EventStatus, type GEvent, type Registration } from
 import { useLiveList } from '@/lib/live'
 import { cn } from '@/lib/utils'
 import { PrimeTeams } from './prime'
-import { avatarUrl, initials, pb, POSITION_LABELS, serverMessage, useUser } from '@/lib/pb'
+import { avatarUrl, initials, pb, POSITION_LABELS, rankAllowed, ranksLabel, serverMessage, useUser } from '@/lib/pb'
+import { RankBadge } from './rank'
+import { formatPhone, whatsappUrl } from '@/lib/phone'
 
 /** Ação do usuário (entrar/sair) + listas de confirmados e espera, ao vivo. */
 export function RegistrationPanel({ event, status }: { event: GEvent; status: EventStatus }) {
@@ -34,15 +36,16 @@ export function RegistrationPanel({ event, status }: { event: GEvent; status: Ev
     <div className="grid gap-6">
       <MyRegistration event={event} status={status} mine={mine} waitRank={mine ? waitlist.indexOf(mine) + 1 : 0} />
       <div className={cn('grid gap-6 xl:items-start', waitlist.length > 0 && 'xl:grid-cols-2')}>
-        <PlayerList title={`${event.type === 'prime' ? 'Capitães' : 'Confirmados'} (${confirmed.length}/${event.maxParticipants})`} regs={confirmed} empty="Ninguém confirmado ainda." />
+        <PlayerList title={`${event.teams ? 'Capitães' : 'Confirmados'} (${confirmed.length}/${event.maxParticipants})`} regs={confirmed} empty="Ninguém confirmado ainda." />
         {waitlist.length > 0 && <PlayerList title={`Lista de espera (${waitlist.length})`} regs={waitlist} numbered />}
       </div>
-      {event.type === 'prime' && <PrimeTeams event={event} captains={confirmed} canInvite={status === 'open' || status === 'full' || status === 'upcoming'} />}
+      {event.teams && <PrimeTeams event={event} captains={confirmed} canInvite={status === 'open' || status === 'full' || status === 'upcoming'} />}
     </div>
   )
 }
 
 function MyRegistration({ event, status, mine, waitRank }: { event: GEvent; status: EventStatus; mine?: Registration; waitRank: number }) {
+  const rank = useUser()!.rank
   const [busy, setBusy] = useState(false)
 
   async function call(action: 'register' | 'cancel') {
@@ -62,6 +65,7 @@ function MyRegistration({ event, status, mine, waitRank }: { event: GEvent; stat
   if (mine?.status === 'attended') return <Notice icon={CircleCheck}>Presença registrada. Bom jogo!</Notice>
   if (status !== 'open' && status !== 'full') return null
 
+  if (!mine && !rankAllowed(event.allowedRanks, rank)) return <Notice>Este evento é só para {ranksLabel(event.allowedRanks)}.</Notice>
   if (!mine) {
     return (
       <Button size="lg" disabled={busy} onClick={() => call('register')}>
@@ -123,7 +127,18 @@ function PlayerList({ title, regs, empty, numbered }: { title: string; regs: Reg
                 <li key={r.id} className="flex items-center gap-3">
                   {numbered && <span className="w-5 text-right text-sm tabular-nums text-muted-foreground">{i + 1}</span>}
                   <Avatar size="sm"><AvatarImage src={avatarUrl(u ?? null)} alt="" /><AvatarFallback>{initials(u?.name ?? '?')}</AvatarFallback></Avatar>
-                  <span className="truncate text-sm">{u?.name ?? 'Jogador'}{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
+                  <div className="grid min-w-0">
+                    <span className="flex min-w-0 items-center gap-2 text-sm">
+                      <span className="truncate">{u?.name ?? 'Jogador'}{r.user === me && <span className="text-muted-foreground"> (você)</span>}</span>
+                      <RankBadge rank={u?.rank} />
+                    </span>
+                    {/* o servidor só manda `phone` para admins (e o próprio dono) */}
+                    {u?.phone && r.user !== me && (
+                      <a href={whatsappUrl(u.phone)} target="_blank" rel="noreferrer" className="w-fit text-xs text-primary hover:underline">
+                        {formatPhone(u.phone)}
+                      </a>
+                    )}
+                  </div>
                   {r.status === 'attended' && <CircleCheck className="size-4 shrink-0 text-emerald-500" aria-label="presente" />}
                   {u?.position && <span className="ml-auto text-xs text-muted-foreground">{POSITION_LABELS[u.position]}</span>}
                 </li>

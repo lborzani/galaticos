@@ -5,7 +5,7 @@ test('navegação certa para o tamanho de tela e sem scroll horizontal', async (
   const ev = await makeEvent(admin.id)
   await loginAs(page, admin)
 
-  for (const url of ['/', '/perfil', `/evento/${ev.id}`, '/admin/eventos/novo']) {
+  for (const url of ['/', '/perfil', `/evento/${ev.id}`, '/admin', '/admin/eventos/novo', '/posts', '/admin/usuarios']) {
     await page.goto(url)
     await expect(page.locator('main')).toBeVisible()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -23,8 +23,10 @@ test('navegação certa para o tamanho de tela e sem scroll horizontal', async (
     await expect(aside.getByRole('link', { name: 'Perfil' })).toBeVisible()
     // QR e câmera ficam no celular
     await expect(aside.getByRole('link', { name: 'Passaporte' })).toBeHidden()
-    await expect(aside.getByRole('link', { name: 'Validar' })).toBeHidden()
-    for (const url of ['/passaporte', '/admin']) {
+    await expect(aside.getByRole('link', { name: 'Admin' })).toBeVisible()
+    await page.goto('/admin')
+    await expect(page.getByRole('link', { name: 'Validar passaportes' })).toBeHidden()
+    for (const url of ['/passaporte', '/admin/validar']) {
       await page.goto(url)
       await expect(page.getByRole('heading', { name: 'Abra no celular' })).toBeVisible()
     }

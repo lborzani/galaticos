@@ -5,6 +5,8 @@ test('cadastro, bloqueio até confirmar o e-mail e login', async ({ page, api })
   await page.goto('/cadastro')
   await page.getByLabel('Nome').fill('Nova Jogadora')
   await page.getByLabel('E-mail').fill(email)
+  await page.getByLabel('Telefone').fill('11912345678')
+  await expect(page.getByLabel('Telefone')).toHaveValue('(11) 91234-5678')
   await page.getByLabel('Senha', { exact: true }).fill('senha-e2e-123')
   await page.getByLabel('Confirmar senha').fill('senha-e2e-123')
   await page.getByRole('button', { name: 'Criar conta' }).click()
@@ -25,6 +27,7 @@ test('cadastro, bloqueio até confirmar o e-mail e login', async ({ page, api })
 
 test('validação do cadastro em português', async ({ page }) => {
   await page.goto('/cadastro')
+  await page.getByLabel('Telefone').fill('1191234')
   await page.getByLabel('Senha', { exact: true }).fill('curta')
   await page.getByLabel('Confirmar senha').fill('outra')
   await page.getByRole('button', { name: 'Criar conta' }).click()
@@ -32,6 +35,7 @@ test('validação do cadastro em português', async ({ page }) => {
   await expect(page.getByText('E-mail inválido')).toBeVisible()
   await expect(page.getByText('Mínimo de 8 caracteres')).toBeVisible()
   await expect(page.getByText('As senhas não coincidem')).toBeVisible()
+  await expect(page.getByText('Telefone inválido')).toBeVisible()
 })
 
 test('rotas internas exigem login e sair encerra a sessão', async ({ page, makeUser }) => {

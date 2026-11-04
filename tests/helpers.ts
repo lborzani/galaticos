@@ -11,11 +11,11 @@ export async function admin() {
 }
 
 /** Cria um usuário verificado e devolve um client autenticado como ele. */
-export async function member(name = 'Jogador', role: 'member' | 'admin' = 'member') {
+export async function member(name = 'Jogador', role: 'member' | 'admin' = 'member', phone = '+5511987654321') {
   const email = `u${crypto.randomUUID()}@test.local`
   const password = 'senha-forte-123'
   const root = await admin()
-  await root.collection('users').create({ email, password, passwordConfirm: password, name, role, verified: true })
+  await root.collection('users').create({ email, password, passwordConfirm: password, name, role, phone, verified: true })
   const pb = new PocketBase(pbUrl())
   await pb.collection('users').authWithPassword(email, password)
   return pb
@@ -27,10 +27,9 @@ const inHours = (h: number) => new Date(Date.now() + h * 3600_000).toISOString()
 export function eventData(createdBy: string, over: Record<string, unknown> = {}) {
   return {
     title: 'Bate-bola Domingo',
-    type: 'sunday',
     eventDate: inHours(48),
     registrationOpensAt: inHours(-1),
-    location: 'Quadra',
+    court: inject('courtId'),
     maxParticipants: 28,
     createdBy,
     ...over,

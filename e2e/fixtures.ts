@@ -11,7 +11,7 @@ const inHours = (h: number) => new Date(Date.now() + h * 3600_000).toISOString()
 type Fixtures = {
   /** Client autenticado como superuser, para preparar dados sem passar pela UI. */
   api: PocketBase
-  makeUser: (opts?: { name?: string; role?: 'admin'; verified?: boolean }) => Promise<TestUser>
+  makeUser: (opts?: { name?: string; role?: 'admin'; verified?: boolean; phone?: string }) => Promise<TestUser>
   makeEvent: (createdBy: string, over?: Record<string, unknown>) => Promise<{ id: string; title: string }>
 }
 
@@ -22,19 +22,20 @@ export const test = base.extend<Fixtures>({
     await use(pb)
   },
   makeUser: async ({ api }, use) => {
-    await use(async ({ name = 'Jogador E2E', role, verified = true } = {}) => {
+    await use(async ({ name = 'Jogador E2E', role, verified = true, phone = '+5511987654321' } = {}) => {
       const email = `e2e${unique()}@test.local`
       const password = 'senha-e2e-123'
-      const rec = await api.collection('users').create({ email, password, passwordConfirm: password, name, role, verified })
+      const rec = await api.collection('users').create({ email, password, passwordConfirm: password, name, role, verified, phone })
       return { id: rec.id, email, password, name }
     })
   },
   makeEvent: async ({ api }, use) => {
     await use(async (createdBy, over = {}) => {
       const title = `Evento ${unique()}`
+      const court = over.court ?? (await api.collection('courts').create({ name: `Quadra ${unique()}` })).id
       return api.collection('events').create({
-        title, type: 'custom', eventDate: inHours(48), registrationOpensAt: inHours(-1),
-        location: 'Quadra E2E', maxParticipants: 10, createdBy, ...over,
+        title, eventDate: inHours(48), registrationOpensAt: inHours(-1),
+        court, maxParticipants: 10, createdBy, ...over,
       })
     })
   },

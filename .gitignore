@@ -22,6 +22,7 @@ yarn-error.*
 
 # PocketBase
 pocketbase/pocketbase
+pocketbase/pocketbase.exe
 pocketbase/pb_data/
 pocketbase/pb_public/
 
