@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { avatarUrl, errorMessage, initials, pb, POSITION_LABELS, RANK_LABELS, useUser, type User } from '@/lib/pb'
+import { shrinkImage } from '@/lib/image'
 import { phoneSchema } from '@/lib/phone'
 import { disablePush, enablePush, pushState, signOut, type PushState } from '@/lib/push'
 
@@ -22,18 +23,45 @@ const schema = z.object({
 })
 
 export default function Profile() {
-  // remonta quando o registro muda (authRefresh, edição em outro aparelho): o formulário nunca salva dados velhos
-  return <ProfileForm key={useUser()!.updated} />
+  const u = useUser()!
+  // remonta quando um campo do formulário muda no servidor (edição em outro aparelho): nunca salva dados velhos.
+  // Fora da chave o que se salva sozinho (disponibilidade), senão apagaria o que está sendo digitado.
+  return <ProfileForm key={[u.name, u.nickname, u.phone, u.position, u.avatar].join('|')} />
+}
+
+// campos de texto como estão no formulário (telefone só dígitos, a máscara muda durante a digitação)
+const textSnapshot = (form: HTMLFormElement) => {
+  const f = new FormData(form)
+  return [f.get('name'), f.get('nickname'), String(f.get('phone')).replace(/\D/g, '')].join('\n')
 }
 
 function ProfileForm() {
   const user = useUser()!
   const { resolvedTheme, setTheme } = useTheme()
   const [position, setPosition] = useState<string>(user.position || NO_POSITION)
-  const [available, setAvailable] = useState(user.availableForTeam)
   const [avatar, setAvatar] = useState<File>()
+  const [processing, setProcessing] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [saving, setSaving] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const initialText = useRef('')
+  const [textDirty, setTextDirty] = useState(false)
+  useEffect(() => { initialText.current = textSnapshot(formRef.current!) }, [])
+  const dirty = textDirty || !!avatar || position !== (user.position || NO_POSITION)
+
+  async function pickAvatar(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // escolher a mesma foto de novo dispara onChange
+    if (!file) return
+    setProcessing(true)
+    try {
+      setAvatar(await shrinkImage(file, 'avatar'))
+    } catch {
+      toast.error('Não foi possível ler essa imagem. Use JPG, PNG ou WebP.')
+    } finally {
+      setProcessing(false)
+    }
+  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -49,13 +77,12 @@ function ProfileForm() {
         nickname: data.nickname,
         phone: data.phone,
         position: position === NO_POSITION ? '' : position,
-        availableForTeam: available,
         ...(avatar && { avatar }),
       })
       setAvatar(undefined)
       toast.success('Perfil atualizado')
     } catch (err) {
-      toast.error(errorMessage(err, 'Não foi possível salvar. A foto deve ser JPG, PNG ou WebP de até 5 MB.'))
+      toast.error(errorMessage(err, 'Não foi possível salvar.'))
     } finally {
       setSaving(false)
     }
@@ -69,7 +96,8 @@ function ProfileForm() {
       <Card>
         <CardHeader><CardTitle>Meu perfil</CardTitle></CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} className="grid gap-5" noValidate>
+          <form ref={formRef} onSubmit={onSubmit} onChange={(e) => setTextDirty(textSnapshot(e.currentTarget) !== initialText.current)}
+            className="grid gap-5" noValidate>
             <div className="flex items-center gap-4">
               <Avatar className="size-20">
                 <AvatarImage src={preview} alt="" className="object-cover" />
@@ -77,11 +105,11 @@ function ProfileForm() {
               </Avatar>
               <div className="grid gap-1">
                 <Button type="button" variant="outline" asChild>
-                  <label htmlFor="avatar">Trocar foto</label>
+                  <label htmlFor="avatar">{processing ? 'Preparando…' : 'Trocar foto'}</label>
                 </Button>
                 <input id="avatar" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only"
-                  onChange={(e) => setAvatar(e.target.files?.[0])} />
-                <span className="text-xs text-muted-foreground">JPG, PNG ou WebP até 5 MB</span>
+                  disabled={processing} onChange={pickAvatar} />
+                <span className="text-xs text-muted-foreground">JPG, PNG ou WebP</span>
               </div>
             </div>
 
@@ -106,15 +134,7 @@ function ProfileForm() {
               </Select>
             </Field>
 
-            <div className="flex items-center justify-between gap-4">
-              <div className="grid gap-1">
-                <Label htmlFor="availableForTeam">Disponível para times Prime</Label>
-                <span className="text-xs text-muted-foreground">Capitães podem te convidar para o time</span>
-              </div>
-              <Switch id="availableForTeam" checked={available} onCheckedChange={setAvailable} />
-            </div>
-
-            <Button type="submit" disabled={saving}>{saving ? 'Salvando…' : 'Salvar'}</Button>
+            <Button type="submit" disabled={saving || processing || !dirty}>{saving ? 'Salvando…' : 'Salvar'}</Button>
           </form>
         </CardContent>
       </Card>
@@ -125,10 +145,39 @@ function ProfileForm() {
             <Label htmlFor="theme">Tema escuro</Label>
             <Switch id="theme" checked={resolvedTheme === 'dark'} onCheckedChange={(on) => setTheme(on ? 'dark' : 'light')} />
           </div>
+          <TeamAvailability />
           <Notifications />
           <Button variant="outline" onClick={signOut}>Sair</Button>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+/** Salva na hora, como os outros interruptores desta coluna. */
+function TeamAvailability() {
+  const user = useUser()!
+  const [busy, setBusy] = useState(false)
+
+  async function toggle(on: boolean) {
+    setBusy(true)
+    try {
+      await pb.collection('users').update<User>(user.id, { availableForTeam: on })
+      toast.success(on ? 'Você está disponível para times Prime' : 'Você saiu da lista de disponíveis')
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não foi possível salvar.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="grid gap-1">
+      <div className="flex items-center justify-between gap-4">
+        <Label htmlFor="availableForTeam">Disponível para times Prime</Label>
+        <Switch id="availableForTeam" checked={user.availableForTeam} disabled={busy} onCheckedChange={toggle} />
+      </div>
+      <span className="text-xs text-muted-foreground">Capitães podem te convidar para o time</span>
     </div>
   )
 }
