@@ -65,12 +65,22 @@ export default function Users() {
   )
 }
 
+function UserBadges({ user }: { user: User }) {
+  return (
+    <>
+      <RankBadge rank={user.rank} />
+      {(user.role === 'admin' || user.role === 'professor') && <Badge variant="secondary">{ROLE_LABELS[user.role]}</Badge>}
+    </>
+  )
+}
+
+const You = () => <span className="text-muted-foreground"> (você)</span>
+
 function UserHeading({ user, self }: { user: User; self: boolean }) {
   return (
     <span className="flex min-w-0 flex-wrap items-center gap-2 font-medium">
-      <span className="truncate"><UserName user={user} />{self && <span className="text-muted-foreground"> (você)</span>}</span>
-      <RankBadge rank={user.rank} />
-      {(user.role === 'admin' || user.role === 'professor') && <Badge variant="secondary">{ROLE_LABELS[user.role]}</Badge>}
+      <span className="truncate"><UserName user={user} />{self && <You />}</span>
+      <UserBadges user={user} />
     </span>
   )
 }
@@ -106,7 +116,11 @@ function UserDialog({ user, self }: { user: User; self: boolean }) {
       <DialogHeader>
         <div className="flex min-w-0 items-center gap-3 pr-8">
           <Avatar className="size-14"><AvatarImage src={avatarUrl(user)} alt="" /><AvatarFallback>{initials(user.name)}</AvatarFallback></Avatar>
-          <DialogTitle className="min-w-0"><UserHeading user={user} self={self} /></DialogTitle>
+          <DialogTitle className="grid min-w-0 gap-1">
+            <span className="break-words">{user.name}{self && <You />}</span>
+            {user.nickname && <span className="text-sm font-normal break-words text-muted-foreground">“{user.nickname}”</span>}
+            <span className="flex flex-wrap gap-2"><UserBadges user={user} /></span>
+          </DialogTitle>
         </div>
         <DialogDescription className="sr-only">Dados e ações de admin sobre {user.name}</DialogDescription>
       </DialogHeader>
