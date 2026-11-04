@@ -53,3 +53,14 @@ test('rotas internas exigem login e sair encerra a sessão', async ({ page, make
   await page.goto('/')
   await expect(page).toHaveURL(/\/entrar$/)
 })
+
+test('5 toques rápidos no logo abrem a homenagem ao Well', async ({ page }) => {
+  await page.goto('/entrar')
+  const logo = page.locator('img[src="/logo-128.webp"]:visible')
+  for (let i = 0; i < 4; i++) await logo.click()
+  await expect(page.getByRole('alertdialog')).toBeHidden()
+  await logo.click()
+  await expect(page.getByRole('heading', { name: 'Em memória de Well' })).toBeVisible()
+  await page.getByRole('button', { name: 'Valeu, Well' }).click()
+  await expect(page.getByRole('alertdialog')).toBeHidden()
+})
