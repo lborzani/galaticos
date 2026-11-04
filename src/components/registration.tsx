@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDateTime, type EventStatus, type GEvent, type Registration } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
+import { cn } from '@/lib/utils'
 import { PrimeTeams } from './prime'
 import { avatarUrl, initials, pb, POSITION_LABELS, serverMessage, useUser } from '@/lib/pb'
 
@@ -32,8 +33,10 @@ export function RegistrationPanel({ event, status }: { event: GEvent; status: Ev
   return (
     <div className="grid gap-6">
       <MyRegistration event={event} status={status} mine={mine} waitRank={mine ? waitlist.indexOf(mine) + 1 : 0} />
-      <PlayerList title={`${event.type === 'prime' ? 'Capitães' : 'Confirmados'} (${confirmed.length}/${event.maxParticipants})`} regs={confirmed} empty="Ninguém confirmado ainda." />
-      {waitlist.length > 0 && <PlayerList title={`Lista de espera (${waitlist.length})`} regs={waitlist} numbered />}
+      <div className={cn('grid gap-6 xl:items-start', waitlist.length > 0 && 'xl:grid-cols-2')}>
+        <PlayerList title={`${event.type === 'prime' ? 'Capitães' : 'Confirmados'} (${confirmed.length}/${event.maxParticipants})`} regs={confirmed} empty="Ninguém confirmado ainda." />
+        {waitlist.length > 0 && <PlayerList title={`Lista de espera (${waitlist.length})`} regs={waitlist} numbered />}
+      </div>
       {event.type === 'prime' && <PrimeTeams event={event} captains={confirmed} canInvite={status === 'open' || status === 'full' || status === 'upcoming'} />}
     </div>
   )

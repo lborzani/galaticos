@@ -58,7 +58,7 @@ function ProfileForm() {
   const preview = localPreview ?? avatarUrl(user, '400x400')
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       <Card>
         <CardHeader><CardTitle>Meu perfil</CardTitle></CardHeader>
         <CardContent>
@@ -106,7 +106,7 @@ function ProfileForm() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="lg:sticky lg:top-8">
         <CardContent className="grid gap-4">
           <div className="flex items-center justify-between">
             <Label htmlFor="theme">Tema escuro</Label>

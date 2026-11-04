@@ -3,6 +3,8 @@ import PocketBase from 'pocketbase'
 import { expect, loginAs, test } from './fixtures'
 import { writeQrVideo } from './fake-camera'
 
+test.skip(({ isMobile }) => !isMobile, 'passaporte e validação só no celular (no desktop: layout.spec)')
+
 test('passaporte mostra QR só para confirmado', async ({ page, makeUser, makeEvent }) => {
   const admin = await makeUser({ role: 'admin' })
   const ev = await makeEvent(admin.id, { maxParticipants: 1 })

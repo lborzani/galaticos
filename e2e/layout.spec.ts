@@ -19,6 +19,14 @@ test('navegação certa para o tamanho de tela e sem scroll horizontal', async (
     await expect(page).toHaveURL(/\/perfil$/)
   } else {
     await expect(bottomNav).toBeHidden()
-    await expect(page.locator('aside').getByRole('link', { name: 'Perfil' })).toBeVisible()
+    const aside = page.locator('aside').first()
+    await expect(aside.getByRole('link', { name: 'Perfil' })).toBeVisible()
+    // QR e câmera ficam no celular
+    await expect(aside.getByRole('link', { name: 'Passaporte' })).toBeHidden()
+    await expect(aside.getByRole('link', { name: 'Validar' })).toBeHidden()
+    for (const url of ['/passaporte', '/admin']) {
+      await page.goto(url)
+      await expect(page.getByRole('heading', { name: 'Abra no celular' })).toBeVisible()
+    }
   }
 })

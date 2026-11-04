@@ -29,10 +29,12 @@ export function PrimeTeams({ event, captains, canInvite }: { event: GEvent; capt
   return (
     <div className="grid gap-4">
       <h2 className="text-lg font-semibold">Times</h2>
-      {captains.map((cap, i) => (
-        <TeamCard key={cap.id} captain={cap} color={TEAM_COLORS[i % TEAM_COLORS.length]} mine={cap.user === me}
-          members={invites?.filter((inv) => inv.captain === cap.user) ?? []} />
-      ))}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {captains.map((cap, i) => (
+          <TeamCard key={cap.id} captain={cap} color={TEAM_COLORS[i % TEAM_COLORS.length]} mine={cap.user === me}
+            members={invites?.filter((inv) => inv.captain === cap.user) ?? []} />
+        ))}
+      </div>
       {isCaptain && canInvite && invites && <InvitePlayers event={event} captains={captains} invites={invites} />}
     </div>
   )

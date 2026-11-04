@@ -30,11 +30,11 @@ export default function Inbox() {
         <p className="text-muted-foreground">Nenhum convite ainda. Marque "Disponível para times Prime" no perfil para receber.</p>
       ) : (
         <>
-          {pending!.map((inv) => <InviteCard key={inv.id} invite={inv} />)}
+          {pending!.length > 0 && <div className="grid gap-6 lg:grid-cols-2">{pending!.map((inv) => <InviteCard key={inv.id} invite={inv} />)}</div>}
           {answered!.length > 0 && (
             <section className="grid gap-3">
               <h2 className="text-lg font-semibold text-muted-foreground">Anteriores</h2>
-              {answered!.map((inv) => <InviteCard key={inv.id} invite={inv} />)}
+              <div className="grid gap-3 lg:grid-cols-2 lg:gap-6">{answered!.map((inv) => <InviteCard key={inv.id} invite={inv} />)}</div>
             </section>
           )}
         </>

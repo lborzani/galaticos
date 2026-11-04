@@ -12,8 +12,8 @@ export function StatusBadge({ status }: { status: EventStatus }) {
 
 export function EventCard({ event, now }: { event: GEvent; now: Date }) {
   return (
-    <Link to={`/evento/${event.id}`} className="block rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
-      <Card className="gap-2 px-4 py-4 transition-colors hover:bg-muted/40">
+    <Link to={`/evento/${event.id}`} className="block h-full rounded-xl focus-visible:outline-2 focus-visible:outline-ring">
+      <Card className="h-full gap-2 px-4 py-4 transition-colors hover:bg-muted/40">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-medium uppercase tracking-wide text-primary">{TYPE_LABELS[event.type]}</p>
@@ -32,6 +32,8 @@ export function EventCard({ event, now }: { event: GEvent; now: Date }) {
   )
 }
 
+const GRID = 'grid gap-3 lg:grid-cols-2 xl:grid-cols-3'
+
 /** Lista dividida em próximos (data crescente) e anteriores (data decrescente). */
 export function EventSections({ events, empty }: { events: GEvent[] | undefined; empty: string }) {
   const now = useNow(30_000)
@@ -44,12 +46,12 @@ export function EventSections({ events, empty }: { events: GEvent[] | undefined;
     <div className="grid gap-8">
       <section className="grid gap-3">
         <h2 className="text-lg font-semibold">Próximos</h2>
-        {upcoming.length ? upcoming.map((e) => <EventCard key={e.id} event={e} now={now} />) : <p className="text-muted-foreground">{empty}</p>}
+        {upcoming.length ? <div className={GRID}>{upcoming.map((e) => <EventCard key={e.id} event={e} now={now} />)}</div> : <p className="text-muted-foreground">{empty}</p>}
       </section>
       {past.length > 0 && (
         <section className="grid gap-3">
           <h2 className="text-lg font-semibold text-muted-foreground">Anteriores</h2>
-          {past.map((e) => <EventCard key={e.id} event={e} now={now} />)}
+          <div className={GRID}>{past.map((e) => <EventCard key={e.id} event={e} now={now} />)}</div>
         </section>
       )}
     </div>

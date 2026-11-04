@@ -4,7 +4,7 @@ import { createBrowserRouter, Outlet, RouterProvider } from 'react-router'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
 import { UpdatePrompt } from '@/UpdatePrompt'
-import { AppLayout, RequireAdmin } from '@/pages/AppLayout'
+import { AppLayout, MobileOnly, RequireAdmin } from '@/pages/AppLayout'
 import { AuthLayout } from '@/pages/auth/AuthLayout'
 import Home from '@/pages/Home'
 import './index.css'
@@ -36,13 +36,13 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/perfil', lazy: page(() => import('@/pages/Profile')) },
-      { path: '/passaporte', lazy: page(() => import('@/pages/Passport')) },
+      { element: <MobileOnly />, children: [{ path: '/passaporte', lazy: page(() => import('@/pages/Passport')) }] },
       { path: '/convites', lazy: page(() => import('@/pages/Inbox')) },
       { path: '/evento/:id', lazy: page(() => import('@/pages/EventDetail')) },
       {
         element: <RequireAdmin />,
         children: [
-          { path: '/admin', lazy: page(() => import('@/pages/admin/Scanner')) },
+          { element: <MobileOnly />, children: [{ path: '/admin', lazy: page(() => import('@/pages/admin/Scanner')) }] },
           { path: '/admin/eventos/novo', lazy: page(() => import('@/pages/admin/EventForm')) },
           { path: '/admin/eventos/:id/editar', lazy: page(() => import('@/pages/admin/EventForm')) },
         ],

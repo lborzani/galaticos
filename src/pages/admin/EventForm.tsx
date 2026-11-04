@@ -98,7 +98,7 @@ export default function EventForm() {
   const fixed = form.type ? FIXED_MAX[form.type] : undefined
 
   return (
-    <Card>
+    <Card className="lg:max-w-3xl">
       <CardHeader><CardTitle>{id ? 'Editar evento' : 'Novo evento'}</CardTitle></CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-5" noValidate>
@@ -117,9 +117,11 @@ export default function EventForm() {
             <Field label="Lista abre em" name="registrationOpensAt" type="datetime-local" value={form.registrationOpensAt}
               onChange={(e) => set({ registrationOpensAt: e.target.value })} error={errors.registrationOpensAt} />
           </div>
-          <Field label="Local" name="location" value={form.location} onChange={(e) => set({ location: e.target.value })} error={errors.location} />
-          <Field label="Vagas" name="maxParticipants" type="number" inputMode="numeric" min={1} value={form.maxParticipants}
-            onChange={(e) => set({ maxParticipants: e.target.value })} disabled={!!fixed} error={errors.maxParticipants} />
+          <div className="grid gap-5 lg:grid-cols-[1fr_10rem]">
+            <Field label="Local" name="location" value={form.location} onChange={(e) => set({ location: e.target.value })} error={errors.location} />
+            <Field label="Vagas" name="maxParticipants" type="number" inputMode="numeric" min={1} value={form.maxParticipants}
+              onChange={(e) => set({ maxParticipants: e.target.value })} disabled={!!fixed} error={errors.maxParticipants} />
+          </div>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>Voltar</Button>
             <Button type="submit" disabled={saving} className="flex-1">{saving ? 'Salvando…' : 'Salvar'}</Button>

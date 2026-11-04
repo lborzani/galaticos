@@ -28,9 +28,11 @@ export default function EventDetail() {
 
   const status = deriveStatus(event, now)
 
+  // lg: inscrição/listas à esquerda, info e ações numa coluna fixa à direita.
+  // No celular a coluna é `contents`: mesma ordem e espaçamento de sempre.
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-2">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+      <div className="grid gap-2 lg:col-span-2">
         <p className="text-xs font-medium uppercase tracking-wide text-primary">{TYPE_LABELS[event.type]}</p>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">{event.title}</h1>
@@ -38,6 +40,7 @@ export default function EventDetail() {
         </div>
       </div>
 
+      <aside className="contents lg:sticky lg:top-8 lg:col-start-2 lg:row-start-2 lg:grid lg:gap-6">
       {event.cancelledAt && (
         <Card className="border-destructive/40 bg-destructive/10">
           <CardContent className="text-sm"><strong>Evento cancelado.</strong> {event.cancellationReason}</CardContent>
@@ -53,14 +56,15 @@ export default function EventDetail() {
         </CardContent>
       </Card>
 
-      {!event.cancelledAt && <RegistrationPanel event={event} status={status} />}
-
       {isAdmin(user) && !isPast(status) && (
-        <div className="flex flex-wrap gap-2">
+        <div className="order-last flex flex-wrap gap-2 lg:order-none">
           <Button variant="outline" asChild><Link to={`/admin/eventos/${event.id}/editar`}><Pencil /> Editar</Link></Button>
           <CancelEvent event={event} />
         </div>
       )}
+      </aside>
+
+      {!event.cancelledAt && <div className="lg:col-start-1 lg:row-start-2"><RegistrationPanel event={event} status={status} /></div>}
     </div>
   )
 }
