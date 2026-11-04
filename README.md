@@ -81,9 +81,11 @@ funcionam entre origens diferentes.
    (`pocketbase/pb_public`) e o fallback da SPA.
 2. Environment Variables: `VITE_PB_URL=https://homeserver.tailb8b7e1.ts.net` (Production e Preview).
 3. Settings → Git → Production Branch: a branch que vai para produção.
-4. Domínio: o `*.vercel.app` já tem HTTPS. Para um domínio próprio: Settings → Domains → adicionar e criar no DNS o
-   registro que a Vercel mostrar (CNAME `cname.vercel-dns.com` para subdomínio).
-5. Na Pi, em `/_/` → Settings → Application URL: a URL da Vercel. É ela que vai nos links dos e-mails.
+4. Domínio `galaticos.app.br` (DNS no Registro.br): na Vercel, Settings → Domains → adicionar `galaticos.app.br` e
+   `www.galaticos.app.br` (redirecionando para o primeiro). No Registro.br → DNS → Editar zona, criar os registros que
+   a Vercel mostrar: `A` em `galaticos.app.br` (IP da Vercel) e `CNAME` em `www` (`…vercel-dns…`). A Vercel emite o
+   HTTPS sozinha quando o DNS propagar.
+5. Na Pi, em `/_/` → Settings → Application URL: `https://galaticos.app.br`. É ela que vai nos links dos e-mails.
 
 **Ordem ao atualizar:** primeiro a Pi (`docker compose up -d --build`, roda as migrations), depois o push que dispara
 a Vercel. Assim o front novo nunca chega antes do backend.
