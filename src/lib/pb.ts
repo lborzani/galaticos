@@ -1,7 +1,8 @@
 import PocketBase, { ClientResponseError, type RecordModel } from 'pocketbase'
 import { useSyncExternalStore } from 'react'
 
-export const pb = new PocketBase('/')
+// VITE_PB_URL: front fora do PocketBase (ex.: Vercel → API na Pi). Sem ela, mesma origem.
+export const pb = new PocketBase(import.meta.env.VITE_PB_URL || '/')
 
 export type PlayerPosition = 'levantador' | 'ponteiro' | 'central' | 'oposto' | 'libero' | 'universal'
 

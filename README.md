@@ -71,6 +71,26 @@ SMTP, URL e backup são lidos do `.env` **só na primeira subida**; depois ajust
 **Atualizar:** `git pull && docker compose up -d --build` (com `--profile caddy` se usar o Caddy). As migrations rodam sozinhas ao iniciar; o app mostra
 "Nova versão disponível" para quem estiver com ele aberto.
 
+### Front na Vercel, API na Pi (produção atual)
+
+O PWA sai da Vercel e fala com o PocketBase da Pi (via Funnel) por `VITE_PB_URL`. Sem essa variável o front usa a
+mesma origem, como no deploy só com Docker. O PocketBase já libera CORS, e o login (token no localStorage) e o realtime
+funcionam entre origens diferentes.
+
+1. Vercel → Add New → Project → importar o repo. `vercel.json` já define o build (`npm run build`), a saída
+   (`pocketbase/pb_public`) e o fallback da SPA.
+2. Environment Variables: `VITE_PB_URL=https://homeserver.tailb8b7e1.ts.net` (Production e Preview).
+3. Settings → Git → Production Branch: a branch que vai para produção.
+4. Domínio: o `*.vercel.app` já tem HTTPS. Para um domínio próprio: Settings → Domains → adicionar e criar no DNS o
+   registro que a Vercel mostrar (CNAME `cname.vercel-dns.com` para subdomínio).
+5. Na Pi, em `/_/` → Settings → Application URL: a URL da Vercel. É ela que vai nos links dos e-mails.
+
+**Ordem ao atualizar:** primeiro a Pi (`docker compose up -d --build`, roda as migrations), depois o push que dispara
+a Vercel. Assim o front novo nunca chega antes do backend.
+
+O PWA servido pela Pi (`.ts.net`) continua funcionando, mas é outra origem: quem migrar para a URL da Vercel precisa
+entrar de novo e reativar as notificações.
+
 **Backup:** automático todo dia às 04:00, mantendo 14 cópias em `pb_data/backups` (volume `pb_data`). Copie para fora
 do servidor regularmente, ou configure S3 em `/_/` → Settings → Backups.
 
