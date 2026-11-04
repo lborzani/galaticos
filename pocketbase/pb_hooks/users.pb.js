@@ -10,6 +10,7 @@ onRecordCreateRequest((e) => {
   }
   if (phone) e.record.set("phonePrivate", phone)
   if (!e.record.getString("rank")) e.record.set("rank", "regular")
+  if (!e.record.getString("role")) e.record.set("role", "member")
   e.next()
 }, "users")
 

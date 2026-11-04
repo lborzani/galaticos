@@ -19,6 +19,7 @@ test('cadastro, bloqueio até confirmar o e-mail e login', async ({ page, api })
 
   // o link do e-mail chama confirmVerification; aqui marcamos direto
   const user = await api.collection('users').getFirstListItem(`email = "${email}"`)
+  expect(user.role).toBe('member')
   await api.collection('users').update(user.id, { verified: true })
 
   await page.getByRole('button', { name: 'Entrar' }).click()
