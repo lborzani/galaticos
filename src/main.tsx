@@ -11,7 +11,7 @@ import './index.css'
 
 /** Cada tela vira um chunk próprio, baixado ao navegar (o service worker deixa tudo em cache depois). */
 const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({ Component: (await load()).default })
-const authPage = (name: 'ConfirmEmail' | 'ForgotPassword' | 'Login' | 'Register' | 'ResetPassword') => async () =>
+const authPage = (name: 'ConfirmEmail' | 'FinishSignup' | 'ForgotPassword' | 'Login' | 'Register' | 'ResetPassword') => async () =>
   ({ Component: (await import('@/pages/auth/pages'))[name] })
 
 const router = createBrowserRouter([
@@ -29,6 +29,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/confirmar-email/:token', lazy: authPage('ConfirmEmail') },
       { path: '/redefinir-senha/:token', lazy: authPage('ResetPassword') },
+      { path: '/finalizar-cadastro/:token', lazy: authPage('FinishSignup') },
     ],
   },
   {

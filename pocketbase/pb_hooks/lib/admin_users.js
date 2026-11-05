@@ -73,4 +73,57 @@ function unban(txApp, userId) {
   txApp.saveNoValidate(user)
 }
 
-module.exports = { update, ban, unban }
+const INVITE_TTL = 7 * 24 * 3600 // o reset padrão (30 min) é curto para convite
+
+/**
+ * Cadastro feito pelo admin: conta já verificada, senha aleatória que ninguém sabe, e o e-mail com o link
+ * para a pessoa criar a dela. O link é um token de reset de senha do PocketBase (mesmas claims e chave de
+ * core.Record.NewPasswordResetToken), só que com validade maior: o app confirma com `confirmPasswordReset`,
+ * e trocar a senha gira o tokenKey, então o link vale uma vez. Se o envio falhar, a transação desfaz o cadastro.
+ */
+function invite(txApp, body) {
+  const name = String(body.name || "").trim()
+  const email = String(body.email || "").trim().toLowerCase()
+  const phone = String(body.phone || "").trim()
+  const rank = body.rank || "regular"
+  const role = body.role || "member"
+  if (name.length < 2 || name.length > 50) {
+    throw new BadRequestError("Nome deve ter de 2 a 50 caracteres.", { name: new ValidationError("invalid", "Nome inválido.") })
+  }
+  if (!phone) throw new BadRequestError("Informe o telefone.", { phone: new ValidationError("required", "Obrigatório.") })
+  if (!RANKS.includes(rank)) throw new BadRequestError("Rank inválido.")
+  if (!ROLES.includes(role)) throw new BadRequestError("Papel inválido.")
+  let existing = null
+  try {
+    existing = txApp.findAuthRecordByEmail("users", email)
+  } catch (_) { /* não achar é o caminho feliz */ }
+  if (existing) throw new BadRequestError("Já existe uma conta com esse e-mail.", { email: new ValidationError("not_unique", "E-mail já cadastrado.") })
+
+  const users = txApp.findCollectionByNameOrId("users")
+  const user = new Record(users)
+  user.set("name", name)
+  user.set("email", email)
+  user.set("phonePrivate", phone)
+  user.set("rank", rank)
+  user.set("role", role)
+  user.set("verified", true)
+  user.setPassword($security.randomString(40))
+  try {
+    txApp.save(user) // telefone inválido vira 400 "Telefone inválido." no onRecordValidate de users.pb.js
+  } catch (err) {
+    if (String(err).includes("email:")) {
+      throw new BadRequestError("E-mail inválido.", { email: new ValidationError("invalid", "E-mail inválido.") })
+    }
+    throw err
+  }
+
+  const token = $security.createJWT(
+    { type: "passwordReset", id: user.id, collectionId: users.id, email: user.email() },
+    user.tokenKey() + users.passwordResetToken.secret,
+    INVITE_TTL,
+  )
+  require(`${__hooks}/lib/email.js`).sendInvite(txApp, user, token)
+  return user
+}
+
+module.exports = { update, ban, unban, invite }

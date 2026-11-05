@@ -106,4 +106,64 @@ describe('gestão de usuários', () => {
     await post(adm, `/api/g/admin/users/${uid(jog)}/ban`, { reason: 'x' })
     expect((await adm.collection('invites').getOne(inv.id)).status).toBe('cancelled')
   })
+
+  describe('cadastro pelo admin', () => {
+    const fields = () => ({ name: 'Nova Pessoa', email: `  Novo${crypto.randomUUID()}@Test.Local `, phone: '+5511912345678' })
+
+    /** Link do e-mail de convite mandado para `email` (corpo em quoted-printable). */
+    async function inviteToken(email: string) {
+      const mails = (await (await fetch(`${FAKE_PUSH_URL}/mails`)).json()) as string[]
+      const mail = mails.find((m) => m.includes(email))
+      const body = mail?.replace(/=\r\n/g, '').replace(/=([0-9A-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+      return body?.match(/\/finalizar-cadastro\/([\w.-]+)/)?.[1]
+    }
+
+    it('só admin cadastra; conta nasce verificada com rank e papel, sem senha conhecida', async () => {
+      const data = fields()
+      await expect(post(await member(), '/api/g/admin/users', data)).rejects.toMatchObject({ status: 403 })
+
+      const adm = await member('Admin', 'admin')
+      const { id } = await post(adm, '/api/g/admin/users', { ...data, rank: 'mitico', role: 'professor' })
+      const email = data.email.trim().toLowerCase()
+      expect(await adm.collection('users').getOne(id)).toMatchObject({
+        name: 'Nova Pessoa', phone: '+5511912345678', verified: true, rank: 'mitico', role: 'professor',
+      })
+      // e-mail não é público (emailVisibility): confere pelo superuser
+      expect((await (await admin()).collection('users').getOne(id)).email).toBe(email)
+      const padrao = fields()
+      const { id: id2 } = await post(adm, '/api/g/admin/users', padrao)
+      expect(await adm.collection('users').getOne(id2)).toMatchObject({ rank: 'regular', role: 'member' })
+    })
+
+    it('link do e-mail cria a senha uma vez e a pessoa entra', async () => {
+      const adm = await member('Admin', 'admin')
+      const data = fields()
+      const email = data.email.trim().toLowerCase()
+      await post(adm, '/api/g/admin/users', data)
+      const token = await inviteToken(email)
+      expect(token).toBeTruthy()
+
+      const users = new PocketBase(pbUrl()).collection('users')
+      await users.confirmPasswordReset(token!, 'minha-senha-1', 'minha-senha-1')
+      await users.authWithPassword(email, 'minha-senha-1')
+      await expect(users.confirmPasswordReset(token!, 'outra-senha-2', 'outra-senha-2')).rejects.toMatchObject({ status: 400 })
+    })
+
+    it('recusa dados inválidos e e-mail repetido sem criar nada', async () => {
+      const adm = await member('Admin', 'admin')
+      const data = fields()
+      const bad = async (over: object, message: string) =>
+        expect(post(adm, '/api/g/admin/users', { ...data, ...over })).rejects.toMatchObject({ status: 400, message })
+      await bad({ name: 'A' }, 'Nome deve ter de 2 a 50 caracteres.')
+      await bad({ phone: '' }, 'Informe o telefone.')
+      await bad({ phone: '+551100' }, 'Telefone inválido.')
+      await bad({ email: 'nao-e-email' }, 'E-mail inválido.')
+      await bad({ rank: 'deus' }, 'Rank inválido.')
+      await bad({ role: 'rei' }, 'Papel inválido.')
+      expect(await adm.collection('users').getFullList({ filter: `email = '${data.email.trim().toLowerCase()}'` })).toHaveLength(0)
+
+      await post(adm, '/api/g/admin/users', data)
+      await bad({ email: data.email.toUpperCase() }, 'Já existe uma conta com esse e-mail.')
+    })
+  })
 })

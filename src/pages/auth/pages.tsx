@@ -3,13 +3,12 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { Field, PhoneField, validate, type FieldErrors } from '@/components/form'
+import { emailSchema as email, Field, nameSchema, PhoneField, validate, type FieldErrors } from '@/components/form'
 import { ClientResponseError } from 'pocketbase'
 import { errorMessage, pb } from '@/lib/pb'
 import { phoneSchema } from '@/lib/phone'
 import { AuthCard } from './AuthLayout'
 
-const email = z.string().trim().toLowerCase().email('E-mail inválido')
 const password = z.string().min(8, 'Mínimo de 8 caracteres')
 const passwordPair = z
   .object({ password, passwordConfirm: z.string() })
@@ -84,7 +83,7 @@ export function Register() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const schema = z.object({ name: z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50), email, phone: phoneSchema }).and(passwordPair)
+    const schema = z.object({ name: nameSchema, email, phone: phoneSchema }).and(passwordPair)
     const { data, errors } = validate(schema, formData(e))
     setErrors(errors ?? {})
     if (!data) return
@@ -169,7 +168,8 @@ export function ConfirmEmail() {
   )
 }
 
-export function ResetPassword() {
+/** Tela de senha nova a partir do token do e-mail: reset de senha e convite do admin usam o mesmo token. */
+function NewPassword({ title, description, done, expired }: { title: string; description?: string; done: string; expired: string }) {
   const { token } = useParams()
   const navigate = useNavigate()
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -181,14 +181,14 @@ export function ResetPassword() {
     if (!data) return
     try {
       await pb.collection('users').confirmPasswordReset(token!, data.password, data.passwordConfirm)
-      navigate('/entrar', { state: { notice: 'Senha alterada. Entre com a nova senha.' } })
+      navigate('/entrar', { state: { notice: done } })
     } catch (err) {
-      setErrors({ form: errorMessage(err, 'Link inválido ou expirado. Peça um novo.') })
+      setErrors({ form: errorMessage(err, expired) })
     }
   }
 
   return (
-    <AuthCard title="Nova senha">
+    <AuthCard title={title} description={description}>
       <form onSubmit={onSubmit} className="grid gap-4" noValidate>
         <Field label="Nova senha" name="password" type="password" autoComplete="new-password" error={errors.password} />
         <Field label="Confirmar senha" name="passwordConfirm" type="password" autoComplete="new-password" error={errors.passwordConfirm} />
@@ -198,3 +198,12 @@ export function ResetPassword() {
     </AuthCard>
   )
 }
+
+export const ResetPassword = () =>
+  <NewPassword title="Nova senha" done="Senha alterada. Entre com a nova senha." expired="Link inválido ou expirado. Peça um novo." />
+
+export const FinishSignup = () => (
+  <NewPassword title="Finalize seu cadastro" description="Sua conta já está pronta. Crie uma senha para entrar."
+    done="Cadastro finalizado! Entre com seu e-mail e a senha que você criou."
+    expired='Link inválido ou expirado. Use "Esqueci a senha" na tela de login para receber outro.' />
+)

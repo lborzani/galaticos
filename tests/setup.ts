@@ -1,6 +1,7 @@
 // Sobe um PocketBase descartável (pb_data temporário, migrations e hooks do repo) para os testes de integração.
 import { spawn, execFileSync } from 'node:child_process'
 import { createServer } from 'node:http'
+import { createServer as createTcpServer } from 'node:net'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -11,12 +12,44 @@ const BIN = path.join(PB_DIR, 'pocketbase')
 export const PB_URL = 'http://127.0.0.1:8091'
 export const SUPERUSER = { email: 'root@test.local', password: 'root-pass-123' }
 export const FAKE_PUSH_URL = 'http://127.0.0.1:8094'
+const FAKE_SMTP_PORT = 8095
+
+/** SMTP falso: aceita tudo e guarda as mensagens cruas (os testes leem em FAKE_PUSH_URL/mails). */
+function fakeSmtp(mails: string[]) {
+  return createTcpServer((sock) => {
+    let buf = ''
+    let data = false
+    sock.write('220 fake\r\n')
+    sock.on('data', (chunk) => {
+      buf += chunk
+      for (;;) {
+        if (data) {
+          const end = buf.indexOf('\r\n.\r\n')
+          if (end < 0) return
+          mails.push(buf.slice(0, end))
+          buf = buf.slice(end + 5)
+          data = false
+          sock.write('250 ok\r\n')
+          continue
+        }
+        const nl = buf.indexOf('\r\n')
+        if (nl < 0) return
+        const cmd = buf.slice(0, nl).toUpperCase()
+        buf = buf.slice(nl + 2)
+        if (cmd.startsWith('DATA')) { data = true; sock.write('354 go\r\n') }
+        else if (cmd.startsWith('QUIT')) sock.end('221 bye\r\n')
+        else sock.write('250 ok\r\n')
+      }
+    })
+  }).listen(FAKE_SMTP_PORT, '127.0.0.1')
+}
 
 /** Sidecar de push falso: guarda o que o PocketBase mandaria entregar. Endpoints com "gone" respondem como expirados. */
-function fakePushSidecar() {
+function fakePushSidecar(mails: string[]) {
   const sent: { endpoint: string; payload: unknown }[] = []
   return createServer(async (req, res) => {
     if (req.method === 'GET' && req.url === '/sent') return res.end(JSON.stringify(sent))
+    if (req.method === 'GET' && req.url === '/mails') return res.end(JSON.stringify(mails))
     if (req.headers.authorization !== 'Bearer test-secret') return res.writeHead(401).end()
     let raw = ''
     for await (const c of req) raw += c
@@ -34,9 +67,12 @@ export default async function setup(project: TestProject) {
   const dataDir = mkdtempSync(path.join(tmpdir(), 'galaticos-pb-'))
   const dirs = ['--dir', dataDir, '--migrationsDir', path.join(PB_DIR, 'pb_migrations'), '--hooksDir', path.join(PB_DIR, 'pb_hooks')]
 
-  execFileSync(BIN, ['migrate', 'up', ...dirs])
+  // a migration de users grava o SMTP nas settings a partir do ambiente
+  execFileSync(BIN, ['migrate', 'up', ...dirs], { env: { ...process.env, SMTP_HOST: '127.0.0.1', SMTP_PORT: String(FAKE_SMTP_PORT), SMTP_TLS: 'false' } })
   execFileSync(BIN, ['superuser', 'upsert', SUPERUSER.email, SUPERUSER.password, ...dirs])
-  const push = fakePushSidecar()
+  const mails: string[] = []
+  const smtp = fakeSmtp(mails)
+  const push = fakePushSidecar(mails)
   const proc = spawn(BIN, ['serve', '--http', '127.0.0.1:8091', '--hooksWatch=false', ...dirs], {
     stdio: 'inherit',
     env: { ...process.env, PUSH_URL: FAKE_PUSH_URL, PUSH_SECRET: 'test-secret', VAPID_PUBLIC_KEY: 'test-public-key' },
@@ -64,6 +100,7 @@ export default async function setup(project: TestProject) {
   return () => {
     proc.kill()
     push.close()
+    smtp.close()
     rmSync(dataDir, { recursive: true, force: true })
   }
 }

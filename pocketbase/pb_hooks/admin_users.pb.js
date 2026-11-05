@@ -1,6 +1,14 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Rank, papel, verificação e banimento: só por estas rotas, só admin.
+// Rank, papel, verificação, banimento e cadastro pelo admin: só por estas rotas, só admin.
+routerAdd("POST", "/api/g/admin/users", (e) => {
+  if (e.auth.getString("role") !== "admin") throw new ForbiddenError("Só admins gerenciam usuários.")
+  const { invite } = require(`${__hooks}/lib/admin_users.js`)
+  let user
+  $app.runInTransaction((txApp) => { user = invite(txApp, e.requestInfo().body) })
+  return e.json(200, { id: user.id })
+}, $apis.requireAuth("users"))
+
 routerAdd("POST", "/api/g/admin/users/{id}", (e) => {
   if (e.auth.getString("role") !== "admin") throw new ForbiddenError("Só admins gerenciam usuários.")
   const { update } = require(`${__hooks}/lib/admin_users.js`)

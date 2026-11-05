@@ -1,10 +1,13 @@
 import { useState, type ReactNode } from 'react'
-import type { z } from 'zod'
+import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatPhone } from '@/lib/phone'
 
 export type FieldErrors = Partial<Record<string, string>>
+
+export const emailSchema = z.string().trim().toLowerCase().email('E-mail inválido')
+export const nameSchema = z.string().trim().min(2, 'Mínimo de 2 caracteres').max(50)
 
 /** Valida com zod e devolve os dados ou o primeiro erro de cada campo. */
 export function validate<T extends z.ZodType>(schema: T, data: unknown):

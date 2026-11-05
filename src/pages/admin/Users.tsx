@@ -1,6 +1,8 @@
 import { UserName, userSearchText } from '@/components/user-name'
-import { useState, type ReactNode } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
+import { z } from 'zod'
+import { emailSchema, Field, nameSchema, PhoneField, validate, type FieldErrors } from '@/components/form'
 import { RankBadge } from '@/components/rank'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -9,7 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { formatDateTime } from '@/lib/events'
 import { useLiveList } from '@/lib/live'
 import { avatarUrl, initials, pb, POSITION_LABELS, RANK_LABELS, serverMessage, useUser, type Rank, type User } from '@/lib/pb'
-import { formatPhone } from '@/lib/phone'
+import { formatPhone, phoneSchema } from '@/lib/phone'
 
 const ROLE_LABELS = { member: 'Membro', professor: 'Professor', admin: 'Admin' }
 
@@ -44,7 +46,10 @@ export default function Users() {
 
   return (
     <div className="grid gap-6">
-      <h1 className="text-2xl font-bold">Usuários</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Usuários</h1>
+        <NewUserButton />
+      </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
         <Input type="search" placeholder="Buscar por nome ou apelido" aria-label="Buscar usuário" value={query} onChange={(e) => setQuery(e.target.value)} />
         <div className="flex gap-2" role="group" aria-label="Filtro">
@@ -196,5 +201,72 @@ function BanButton({ user }: { user: User }) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  )
+}
+
+/** Cadastro pelo admin: a conta nasce verificada e a pessoa recebe o link para criar a senha. */
+function NewUserButton() {
+  const [open, setOpen] = useState(false)
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button>Cadastrar</Button></DialogTrigger>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Cadastrar usuário</DialogTitle>
+          <DialogDescription>A pessoa recebe um e-mail para criar a senha. A conta já entra confirmada.</DialogDescription>
+        </DialogHeader>
+        <NewUserForm onDone={() => setOpen(false)} />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+const newUserSchema = z.object({ name: nameSchema, email: emailSchema, phone: phoneSchema, rank: z.string(), role: z.string() })
+
+function NewUserForm({ onDone }: { onDone: () => void }) {
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [loading, setLoading] = useState(false)
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const { data, errors } = validate(newUserSchema, Object.fromEntries(new FormData(e.currentTarget)))
+    setErrors(errors ?? {})
+    if (!data) return
+    setLoading(true)
+    try {
+      await pb.send('/api/g/admin/users', { method: 'POST', body: data })
+      toast.success(`${data.name} cadastrado. Convite enviado para ${data.email}`)
+      onDone()
+    } catch (err) {
+      setErrors({ form: serverMessage(err) })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="grid gap-4" noValidate>
+      <Field label="Nome" name="name" autoComplete="off" error={errors.name} />
+      <Field label="E-mail" name="email" type="email" autoComplete="off" error={errors.email} />
+      <PhoneField error={errors.phone} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-2">
+          <Label htmlFor="new-rank">Rank</Label>
+          <Select name="rank" defaultValue="regular">
+            <SelectTrigger id="new-rank" className="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(RANK_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="new-role">Papel</Label>
+          <Select name="role" defaultValue="member">
+            <SelectTrigger id="new-role" className="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(ROLE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      </div>
+      {errors.form && <p className="text-sm text-destructive" role="alert">{errors.form}</p>}
+      <Button type="submit" disabled={loading}>{loading ? 'Cadastrando…' : 'Cadastrar e enviar convite'}</Button>
+    </form>
   )
 }
