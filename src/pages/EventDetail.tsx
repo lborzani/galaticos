@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, MapPin, Pencil, ShieldCheck, Users } from 'lucide-react'
+import { CalendarDays, Clock, MapPin, Pencil, ScanLine, ShieldCheck, Users } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -66,6 +66,8 @@ export default function EventDetail() {
 
       {isAdmin(user) && !isPast(status) && (
         <div className="order-last flex flex-wrap gap-2 lg:order-none">
+          {/* scanner só no celular (rota mostra aviso no desktop) */}
+          <Button className="w-full lg:hidden" asChild><Link to="/admin/validar"><ScanLine /> Validar passaportes</Link></Button>
           <Button variant="outline" asChild><Link to={`/admin/eventos/${event.id}/editar`}><Pencil /> Editar</Link></Button>
           <CancelEvent event={event} />
         </div>

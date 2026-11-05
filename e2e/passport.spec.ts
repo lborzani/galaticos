@@ -47,7 +47,10 @@ test('admin lê o QR pela câmera e confirma presença; membro não acessa o sca
   await ctx.route(/cdn\.jsdelivr\.net|unpkg\.com|fastly\.jsdelivr/, (r) => r.abort())
   const adminPage = await ctx.newPage()
   await loginAs(adminPage, admin)
-  await adminPage.goto('/admin/validar')
+  // atalho na página do evento: o admin está nela na hora do check-in
+  await adminPage.goto(`/evento/${ev.id}`)
+  await adminPage.getByRole('link', { name: 'Validar passaportes' }).click()
+  await expect(adminPage).toHaveURL(/\/admin\/validar$/)
 
   const result = adminPage.getByRole('status')
   await expect(result).toContainText('Bia Presente', { timeout: 15_000 })
